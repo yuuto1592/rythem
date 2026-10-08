@@ -168,6 +168,37 @@ and prints what was expected next to what happened:
 > `.godot/` is missing. If you add a new `class_name` and see that error, run
 > the import line above again.
 
+> **Time limit.** A script with a syntax error does not make Godot exit; it
+> sits on an empty scene forever. `run_tests.sh` therefore stops the run after
+> 90 seconds, exits with 124 and says so. Look for `SCRIPT ERROR` in the output
+> to find the broken file. Raise the limit with `TEST_TIMEOUT=300` if the suite
+> ever legitimately needs longer. (On macOS this needs `gtimeout` from
+> `brew install coreutils`; without it the run is not capped.)
+
+### Continuous integration
+
+`.github/workflows/tests.yml` (at the repository root, not in this folder) runs
+the same `run_tests.sh` on GitHub's servers:
+
+- **When:** every push to `main`, every pull request, and on demand from the
+  Actions tab (**Run workflow**).
+- **Where to look:** the checks section at the bottom of a pull request, the
+  ✓/✗ next to each commit, and the **Actions** tab for full logs.
+- **Godot is cached.** The first run downloads Godot (about 50 MB) and saves
+  it; later runs restore it in seconds and skip the download. The log shows
+  which happened: the "Download Godot (cache miss only)" step is skipped on a
+  cache hit.
+- A pull request can use the cache from its own earlier runs and from `main`.
+  Until `main` has run once, each new pull request downloads Godot on its
+  first run. GitHub deletes caches that go unused for 7 days; the next run
+  then downloads again and re-caches.
+- **Changing the Godot version:** edit `GODOT_VERSION` at the top of the
+  workflow (a release tag such as `4.4-stable`). The cache is keyed on it, so
+  the new version is downloaded once and cached from then on.
+- A newer push to the same branch cancels the run it makes obsolete, and the
+  job is capped at 10 minutes as a backstop, so a stuck run cannot use up
+  Actions minutes.
+
 ### What is covered
 
 | File | What it checks |
