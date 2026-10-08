@@ -1,0 +1,72 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/result.gd" id="1_result"]
+
+[node name="Result" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_result")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.054902, 0.0588235, 0.0941176, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Column" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(520, 0)
+theme_override_constants/separation = 14
+
+[node name="SongLabel" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+text = "Song"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+theme_override_font_sizes/font_size = 22
+
+[node name="GradeLabel" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+text = "S"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 96
+
+[node name="ScoreLabel" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+text = "0000000"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 40
+
+[node name="SummaryLabel" type="Label" parent="Center/Column"]
+unique_name_in_owner = true
+text = ""
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 0.7)
+theme_override_font_sizes/font_size = 18
+
+[node name="Breakdown" type="VBoxContainer" parent="Center/Column"]
+unique_name_in_owner = true
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Column"]
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="RetryButton" type="Button" parent="Center/Column/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 44)
+text = "Retry"
+
+[node name="MenuButton" type="Button" parent="Center/Column/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 44)
+text = "Song select"

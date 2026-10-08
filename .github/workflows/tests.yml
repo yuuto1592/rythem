@@ -1,0 +1,52 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same branch or PR cancels the run it makes obsolete.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Change this to test against another Godot release. The cache key includes
+  # it, so a new version is downloaded once and cached from then on.
+  GODOT_VERSION: 4.7.2-stable
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Backstop only. run_tests.sh has its own, much shorter, limit.
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: beat to light
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Godot from cache
+        id: godot-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot (cache miss only)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL --retry 3 -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mkdir -p ~/godot
+          unzip -q godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Run tests
+        run: |
+          "$HOME/godot/godot" --version
+          GODOT="$HOME/godot/godot" tests/run_tests.sh

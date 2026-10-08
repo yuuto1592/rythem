@@ -1,0 +1,134 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/game.gd" id="1_game"]
+[ext_resource type="Script" path="res://scripts/playfield.gd" id="2_field"]
+[ext_resource type="Script" path="res://scripts/conductor.gd" id="3_cond"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="4_hud"]
+
+[node name="Game" type="Node2D"]
+script = ExtResource("1_game")
+
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="Background" type="ColorRect" parent="BackgroundLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0431373, 0.0470588, 0.0784314, 1)
+
+[node name="Playfield" type="Node2D" parent="."]
+position = Vector2(576, 0)
+script = ExtResource("2_field")
+
+[node name="Notes" type="Node2D" parent="Playfield"]
+
+[node name="Conductor" type="Node" parent="."]
+script = ExtResource("3_cond")
+
+[node name="Music" type="AudioStreamPlayer" parent="Conductor"]
+
+[node name="HudLayer" type="CanvasLayer" parent="."]
+
+[node name="Hud" type="Control" parent="HudLayer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_hud")
+
+[node name="ProgressBar" type="ProgressBar" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_right = 1.0
+offset_bottom = 6.0
+grow_horizontal = 2
+max_value = 1.0
+step = 0.001
+value = 0.0
+show_percentage = false
+
+[node name="SongLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+offset_left = 28.0
+offset_top = 20.0
+offset_right = 600.0
+offset_bottom = 54.0
+text = "Song"
+theme_override_font_sizes/font_size = 22
+
+[node name="ScoreLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -320.0
+offset_top = 14.0
+offset_right = -28.0
+offset_bottom = 60.0
+grow_horizontal = 0
+text = "0000000"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 36
+
+[node name="AccuracyLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -320.0
+offset_top = 60.0
+offset_right = -28.0
+offset_bottom = 86.0
+grow_horizontal = 0
+text = "100.00%"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.6)
+theme_override_font_sizes/font_size = 18
+
+[node name="AutoplayLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_right = 1.0
+offset_top = 96.0
+offset_bottom = 122.0
+grow_horizontal = 2
+text = "AUTOPLAY"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 0.65, 0.3, 0.85)
+theme_override_font_sizes/font_size = 18
+
+[node name="ComboLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_right = 1.0
+offset_top = 180.0
+offset_bottom = 260.0
+grow_horizontal = 2
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 0.85)
+theme_override_font_sizes/font_size = 64
+
+[node name="JudgementLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_right = 1.0
+offset_top = 270.0
+offset_bottom = 316.0
+grow_horizontal = 2
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_font_sizes/font_size = 34
+
+[node name="HintLabel" type="Label" parent="HudLayer/Hud"]
+unique_name_in_owner = true
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 0
+text = ""
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 0.45)
+theme_override_font_sizes/font_size = 16
