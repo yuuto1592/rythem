@@ -2,7 +2,7 @@
 # Runs the test suite headlessly. Exit code is 0 when every test passes.
 #
 #   tests/run_tests.sh                     # uses `godot` from PATH
-#   GODOT=/path/to/Godot_v4.3 tests/run_tests.sh
+#   GODOT=/path/to/Godot_v4.7.2 tests/run_tests.sh
 #   TEST_TIMEOUT=300 tests/run_tests.sh    # raise the time limit (seconds)
 set -euo pipefail
 

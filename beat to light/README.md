@@ -4,7 +4,10 @@ Godot 4 で作った、4レーンの落下型リズムゲームです。完成�
 タイミング、スコア、譜面の形式、画面遷移はすべて動いていて、どの部品も小さく、
 差し替えやすくしてあります。
 
-Godot 4 で `project.godot` を開き、F5 で起動します。
+Godot **4.7.2** で `project.godot` を開き（プロジェクトマネージャーの「インポート」から）、
+F5 で起動します。CI もこの版でテストしています。Godot は
+<https://github.com/godotengine/godot/releases/tag/4.7.2-stable> から入手できます。
+標準版で十分で、.NET 版（ファイル名に `mono` が付くもの）は不要です。
 
 ## 操作
 
@@ -114,9 +117,8 @@ tests/
 
 ### 必要なもの
 
-- **Godot 4.x**。4.3 stable で動作を確認しています。
-  <https://godotengine.org/download/archive/> からダウンロードできます。通常版で十分で、
-  .NET 版は不要です。
+- **Godot 4.7.2**（入手先は冒頭のとおり）。4.3、4.4、4.5 でも全テストが通ることを
+  確認しています。4.2 以前は対象外です（4.0 と 4.1 では起動しません）。
 - **bash**（`run_tests.sh` 用）。macOS、Linux、Windows の Git Bash や WSL で使えます。
   bash のない Windows では、下に書いたコマンドを直接実行してください。
 
@@ -129,7 +131,7 @@ tests/
 
 ```sh
 tests/run_tests.sh                                   # PATH 上の godot を使う
-GODOT=~/bin/Godot_v4.3-stable_linux.x86_64 tests/run_tests.sh
+GODOT=~/bin/Godot_v4.7.2-stable_linux.x86_64 tests/run_tests.sh
 ```
 
 bash がない場合（PowerShell やコマンドプロンプト）は、プロジェクトのフォルダで
@@ -186,7 +188,7 @@ godot --headless --path . res://tests/test_runner.tscn
   初回の実行で Godot をダウンロードします。また、7日間使われなかったキャッシュは GitHub が
   削除するので、その次の実行で再びダウンロードして保存し直します。
 - **Godot のバージョンを変えるには：** ワークフロー先頭の `GODOT_VERSION` を書き換えます
-  （`4.4-stable` のようなリリースのタグ名）。キャッシュはこの値ごとに保存されるので、
+  （`4.7.2-stable` のようなリリースのタグ名）。キャッシュはこの値ごとに保存されるので、
   新しいバージョンは一度だけダウンロードされ、以降はキャッシュから使われます。
 - 同じブランチに新しくプッシュすると、古くなった実行は自動で取り消されます。さらに念のため
   1回の実行は最大10分で打ち切られるので、止まった実行が Actions の利用時間を使い切る

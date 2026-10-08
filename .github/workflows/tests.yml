@@ -14,7 +14,7 @@ concurrency:
 env:
   # Change this to test against another Godot release. The cache key includes
   # it, so a new version is downloaded once and cached from then on.
-  GODOT_VERSION: 4.3-stable
+  GODOT_VERSION: 4.7.2-stable
 
 jobs:
   test:
