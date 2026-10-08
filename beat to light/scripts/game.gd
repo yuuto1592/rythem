@@ -7,6 +7,10 @@ extends Node2D
 ## is derived from [member Conductor.chart_time], which is why the game stays
 ## in sync even if a frame takes too long.
 
+## Emitted once the chart is over, with the same dictionary that is left in
+## GameState.last_result.
+signal run_finished(result: Dictionary)
+
 ## Seconds of quiet after the last note before the result screen appears.
 const OUTRO := 1.5
 
@@ -37,7 +41,7 @@ func _ready() -> void:
 	_chart = Chart.load_from_file(GameState.chart_path)
 	if _chart == null:
 		# Nothing to play; the menu is the only sensible place to go.
-		get_tree().change_scene_to_file.call_deferred(GameState.MENU_SCENE)
+		_leave_to(GameState.MENU_SCENE)
 		return
 
 	_autoplay = GameState.autoplay
@@ -175,8 +179,10 @@ func _on_beat_hit(_beat_index: int) -> void:
 
 func _on_song_finished() -> void:
 	_running = false
-	GameState.last_result = _build_result()
-	get_tree().change_scene_to_file.call_deferred(GameState.RESULT_SCENE)
+	var result := _build_result()
+	GameState.last_result = result
+	run_finished.emit(result)
+	_leave_to(GameState.RESULT_SCENE)
 
 func _build_result() -> Dictionary:
 	var accuracy := _accuracy()
@@ -201,4 +207,10 @@ func _load_music() -> AudioStream:
 func _to_menu() -> void:
 	_conductor.stop()
 	_running = false
-	get_tree().change_scene_to_file.call_deferred(GameState.MENU_SCENE)
+	_leave_to(GameState.MENU_SCENE)
+
+## Scene changes only happen when this is the scene being played. Embedded in
+## another scene (the tests do this) the host stays in charge of navigation.
+func _leave_to(scene_path: String) -> void:
+	if get_tree().current_scene == self:
+		get_tree().change_scene_to_file.call_deferred(scene_path)

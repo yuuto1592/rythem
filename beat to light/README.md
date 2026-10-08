@@ -41,6 +41,11 @@ scripts/
 songs/
   01_warm_up.json    "Warm Up" — 32 quarter notes, 100 BPM
   02_first_light.json "First Light" — 124 notes, 120 BPM
+tests/
+  run_tests.sh       headless test entry point (see Testing)
+  test_runner.tscn   the scene that runs every test
+  test_*.gd          the tests themselves
+  fixtures/          charts used only by tests
 ```
 
 ## How timing works
@@ -106,6 +111,121 @@ Filters to export non-resource files**, otherwise `songs/` ships empty.
 press can be and still count), what each rank is worth, the grade cut-offs and
 the maximum score. The score is normalised, so a full combo is always
 `MAX_SCORE` no matter how many notes a chart has.
+
+## Testing
+
+The tests need nothing but Godot itself: no plugin, no addon. They run
+headless, so they work on a server or in CI as well as on your machine.
+
+### What you need
+
+- **Godot 4.x.** The suite is verified on 4.3 stable. Download it from
+  <https://godotengine.org/download/archive/>. The standard build is enough; the
+  .NET build is not needed.
+- **bash**, for `run_tests.sh` (macOS, Linux, Git Bash or WSL on Windows). On
+  plain Windows, run the commands it wraps directly; see below.
+
+There is no audio device on a headless machine. Godot falls back to a dummy
+audio driver, the game still runs, and the tests do not depend on hearing
+anything.
+
+### Running the tests
+
+From the project folder:
+
+```sh
+tests/run_tests.sh                                   # `godot` on your PATH
+GODOT=~/bin/Godot_v4.3-stable_linux.x86_64 tests/run_tests.sh
+```
+
+Without bash (PowerShell or cmd), run the two steps yourself from the project
+folder:
+
+```sh
+godot --headless --editor --quit --path .            # first time only
+godot --headless --path . res://tests/test_runner.tscn
+```
+
+From the editor: open `tests/test_runner.tscn` and press **F6** (Run Current
+Scene). Results appear in the Output panel.
+
+A passing run looks like this and exits with code 0. Any failure exits with 1
+and prints what was expected next to what happened:
+
+```
+  PASS  test_judge.test_exact_hit_is_perfect
+  ...
+  PASS  test_autoplay_run
+  PASS  test_input_run
+
+28 passed, 0 failed (5.9s)
+```
+
+> **First run on a fresh checkout.** Godot only learns the global class names
+> (`Chart`, `Judge`, `Conductor`, ...) when it imports the project, and
+> `.godot/` is not committed. Without that step every script fails with
+> `Identifier "Chart" not declared`. `run_tests.sh` imports automatically when
+> `.godot/` is missing. If you add a new `class_name` and see that error, run
+> the import line above again.
+
+### What is covered
+
+| File | What it checks |
+| --- | --- |
+| `test_judge.gd` | Window edges, early = late, rank ordering, grades. Catches a tuning edit that breaks the table, e.g. a GREAT window narrower than PERFECT. |
+| `test_chart.gd` | Beats to seconds, sorting, lane clamping, junk entries, defaults. **Also loads every chart in `songs/`**, so a broken chart fails the suite. |
+| `test_playfield.gd` | Lane positions and the time-to-screen mapping. |
+| `test_conductor.gd` | Beat length and the clock-mode fallback. |
+| `test_autoplay_run.gd` | Plays `game.tscn` for real with autoplay: spawning, scrolling, judging, scoring, the result handoff and the metronome. Expects an exact perfect score. |
+| `test_input_run.gd` | Plays it again by **sending real key events**, which exercises the key bindings and the input handling that autoplay bypasses. |
+
+The two play tests run on the wall clock against
+`tests/fixtures/smoke.json` (5 notes, about 3 seconds each). A synthesised
+press can land up to one frame late, so the input test accepts PERFECT or
+GREAT rather than demanding PERFECT. That keeps it from failing on a slow
+machine while still catching a broken input path.
+
+The play tests put the game scene inside the test runner instead of switching
+to it. `game.gd` emits `run_finished(result)` and only changes scene when it is
+the scene being played, which is what makes that possible.
+
+### Adding a test
+
+Unit test: create `tests/test_something.gd`, extend `TestCase`, write methods
+whose names start with `test_`, and add the script to `UNIT_TESTS` in
+`test_runner.gd`. Each method gets a fresh instance.
+
+```gdscript
+extends TestCase
+
+func test_quarter_note_at_60_bpm() -> void:
+	var chart := Chart.from_dict({"bpm": 60, "notes": [{"beat": 1, "lane": 0}]})
+	check_near(chart.notes[0].time, 1.0, "one beat is one second")
+```
+
+Available checks: `check(condition, message)`, `check_eq(actual, expected,
+message)` and `check_near(actual, expected, message, tolerance)`. GDScript has
+no exceptions, so a failed check records the message and the test continues.
+
+Test that needs the running game: extend `PlayTest` instead, override
+`run(host)`, and add it to `PLAY_TESTS`. `test_input_run.gd` is the example to
+copy.
+
+### What the tests cannot tell you
+
+Headless means nothing is drawn and nothing is heard. Check these by hand
+after changing the playfield, the HUD or the timing code:
+
+- [ ] The lanes, notes and judge line look right at the window size you ship.
+- [ ] HUD text fits and does not overlap the playfield.
+- [ ] With a real song, notes land on the beat you hear. If they are
+      consistently early or late, adjust the chart's `offset`.
+- [ ] Hit and miss sounds play, and the metronome plays when there is no music.
+
+### Exporting
+
+`tests/` ships in exported builds unless you exclude it. Add `tests/*` to
+**Project > Export > Resources > Filters to exclude files/folders**.
 
 ## Where to go next
 

@@ -1,0 +1,16 @@
+{
+  "title": "Smoke Test",
+  "artist": "tests",
+  "bpm": 240,
+  "offset": 0.0,
+  "lane_count": 4,
+  "scroll_time": 0.5,
+  "music": "",
+  "notes": [
+    {"beat": 2, "lane": 0},
+    {"beat": 3, "lane": 1},
+    {"beat": 4, "lane": 2},
+    {"beat": 4, "lane": 3},
+    {"beat": 5, "lane": 0}
+  ]
+}
