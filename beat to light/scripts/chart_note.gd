@@ -11,7 +11,8 @@ enum Kind {
 var time := 0.0
 ## Zero-based lane index.
 var lane := 0
-## Reserved so hold/slide notes can be added without changing the loader.
+## Reserved for hold/slide notes. Chart.from_dict does not read a kind from
+## the JSON yet, so every loaded note is a TAP.
 var kind := Kind.TAP
 
 func _init(p_time := 0.0, p_lane := 0, p_kind := Kind.TAP) -> void:
