@@ -1,73 +1,72 @@
 # beat to light
 
-A 4-lane falling-note rhythm game in Godot 4. This is a playable base, not a
-finished game: the timing, scoring, chart format and scene flow all work, and
-each piece is small enough to replace.
+Godot 4 で作った、4レーンの落下型リズムゲームです。完成品ではなく「遊べる土台」です。
+タイミング、スコア、譜面の形式、画面遷移はすべて動いていて、どの部品も小さく、
+差し替えやすくしてあります。
 
-Open `project.godot` in Godot 4 and press F5.
+Godot 4 で `project.godot` を開き、F5 で起動します。
 
-## Controls
+## 操作
 
-| Key | Action |
+| キー | 動作 |
 | --- | --- |
-| `D` `F` `J` `K` | Lanes 1–4 |
-| `R` | Restart the chart |
-| `F1` | Toggle autoplay |
-| `Esc` | Back to song select (quit from the menu) |
+| `D` `F` `J` `K` | レーン1〜4 |
+| `R` | 最初からやり直す |
+| `F1` | オートプレイの切り替え |
+| `Esc` | 曲選択に戻る（曲選択画面では終了） |
 
-Lane keys are physical key positions, so they stay under the same fingers on a
-non-QWERTY layout. Change them in `scripts/key_binds.gd`.
+レーンのキーは物理的なキーの位置で判定するので、キー配列が QWERTY でなくても
+同じ指の位置で遊べます。変更は `scripts/key_binds.gd` で行います。
 
-## What is in here
+## 構成
 
 ```
 scenes/
-  main_menu.tscn    song select; lists every chart in songs/
-  game.tscn         the playfield, the conductor and the HUD
-  result.tscn       score, grade and judgement breakdown
+  main_menu.tscn    曲選択。songs/ 内の譜面を一覧表示
+  game.tscn         プレイ画面（レーン、コンダクター、HUD）
+  result.tscn       スコア、ランク、判定の内訳
 scripts/
-  conductor.gd      the clock: "when is now?" in song time
-  chart.gd          loads a JSON chart; beats -> seconds
-  chart_note.gd     one note (time, lane, kind)
-  judge.gd          timing windows, scoring weights, grades
-  game.gd           the gameplay loop
-  playfield.gd      lane geometry and lane drawing
-  note.gd           a single falling note
-  hud.gd            in-game readouts
+  conductor.gd      時計役。曲の中で「今が何秒か」を決める
+  chart.gd          JSON 譜面の読み込み。拍を秒に変換
+  chart_note.gd     ノーツ1つ分のデータ（時刻、レーン、種類）
+  judge.gd          判定幅、配点、ランク
+  game.gd           ゲームのメインループ
+  playfield.gd      レーンの座標計算と描画
+  note.gd           落ちてくるノーツ1つ
+  hud.gd            プレイ中の表示
   main_menu.gd / result.gd
-  game_state.gd     autoload: what survives a scene change
-  sfx.gd            autoload: hit/miss/metronome blips, synthesised at startup
-  key_binds.gd      key layout, registered into the InputMap at runtime
+  game_state.gd     自動読み込み（autoload）。シーンをまたいで残す値
+  sfx.gd            自動読み込み。ヒット音・ミス音・メトロノームを起動時に合成
+  key_binds.gd      キー配置。起動時に InputMap へ登録
 songs/
-  01_warm_up.json    "Warm Up" — 32 quarter notes, 100 BPM
-  02_first_light.json "First Light" — 124 notes, 120 BPM
+  01_warm_up.json    「Warm Up」4分音符32個、100 BPM
+  02_first_light.json 「First Light」124ノーツ、120 BPM
 tests/
-  run_tests.sh       headless test entry point (see Testing)
-  test_runner.tscn   the scene that runs every test
-  test_*.gd          the tests themselves
-  fixtures/          charts used only by tests
+  run_tests.sh       テストの実行入口（「テスト」の節を参照）
+  test_runner.tscn   全テストを実行するシーン
+  test_*.gd          テスト本体
+  fixtures/          テスト専用の譜面
 ```
 
-## How timing works
+## タイミングの仕組み
 
-Everything derives from `Conductor.chart_time`. Nothing accumulates its own
-delta, so a dropped frame cannot make the notes drift away from the music.
+時刻はすべて `Conductor.chart_time` から計算します。各部品が自分で経過時間（delta）を
+積み上げることはしないので、フレーム落ちがあってもノーツが音楽からずれていきません。
 
-- With a song loaded, the conductor reads the audio playback position and
-  corrects it with `AudioServer.get_time_since_last_mix()` and the output
-  latency, which is what keeps the visuals matched to what you hear.
-- With no song, it runs on the system clock and `Sfx.play_tick()` gives the
-  player a metronome instead. Both bundled charts work this way, so the project
-  is playable before you have any audio.
+- 曲が読み込まれているときは、コンダクターが音声の再生位置を読み取り、
+  `AudioServer.get_time_since_last_mix()` と出力遅延で補正します。これで画面と
+  聞こえる音が一致します。
+- 曲がないときはシステムの時計で進み、代わりに `Sfx.play_tick()` がメトロノームを
+  鳴らします。同梱の譜面は2つともこの方式なので、音源を用意する前から遊べます。
 
-A note's screen position is just its distance from now:
-`Playfield.y_for(note.time - chart_time)`. A note `scroll_time` seconds away
-sits at the top of the screen; at 0 it is on the judge line.
+ノーツの画面上の位置は「あと何秒で叩くか」だけで決まります：
+`Playfield.y_for(note.time - chart_time)`。`scroll_time` 秒先のノーツは画面の一番上に、
+0秒のノーツは判定ラインの上にあります。
 
-## Writing a chart
+## 譜面の書き方
 
-Drop a JSON file in `songs/` and it shows up in song select. Song select is
-sorted by file name, which is what the number prefixes are for.
+`songs/` に JSON ファイルを置くと曲選択に表示されます。曲選択はファイル名順に並ぶので、
+ファイル名の先頭に番号を付けて順番を決めています。
 
 ```json
 {
@@ -85,72 +84,67 @@ sorted by file name, which is what the number prefixes are for.
 }
 ```
 
-- `beat` is counted from the start of the chart; `0.5` is an eighth note at 4/4.
-  A note can use `"time"` in seconds instead if you would rather place it by hand.
-- `lane` is zero-based, left to right.
-- Two notes on the same beat in different lanes make a jump. Nothing special is
-  needed for chords.
-- `scroll_time` is how long a note is visible before it has to be hit. Lower is
-  faster and harder.
-- `offset` shifts every note later, in seconds. Use it to line a chart up with
-  its audio.
+- `beat` は譜面の先頭から数えた拍です。4/4拍子なら `0.5` が8分音符1つ分です。
+  手で細かく置きたい場合は、代わりに `"time"`（秒）でも指定できます。
+- `lane` は左から 0, 1, 2, … と数えます。
+- 同じ拍に別レーンのノーツを2つ置くと同時押しになります。特別な書き方は要りません。
+- `scroll_time` はノーツが現れてから叩くまでの秒数です。小さいほど速く、難しくなります。
+- `offset` は全ノーツを指定した秒数だけ後ろにずらします。譜面を音源に合わせるときに使います。
 
-## Adding music
+## 曲を付ける
 
-Put an `.ogg` next to the chart, point the chart's `"music"` field at it
-(`"res://songs/mysong.ogg"`), and the conductor switches to the audio clock on
-its own. If the notes feel consistently early or late against the track, nudge
-`offset` rather than moving the notes.
+譜面の隣に `.ogg` を置き、譜面の `"music"` にそのパス（`"res://songs/mysong.ogg"`）を
+書くと、コンダクターは自動的に音声の再生位置を基準にするようになります。曲に対して
+ノーツがいつも早い・遅いと感じたら、ノーツを動かすのではなく `offset` を調整してください。
 
-Exported builds need `*.json` added to **Project > Export > Resources >
-Filters to export non-resource files**, otherwise `songs/` ships empty.
+ゲームを書き出す（エクスポートする）ときは、エクスポート設定の **Resources** タブにある
+**Filters to export non-resource files/folders**（英語 UI での名称）に `*.json` を
+追加してください。追加しないと `songs/` が空のまま書き出されます。
 
-## Tuning the feel
+## 手触りの調整
 
-`scripts/judge.gd` holds all of it in one place: the timing windows (how late a
-press can be and still count), what each rank is worth, the grade cut-offs and
-the maximum score. The score is normalised, so a full combo is always
-`MAX_SCORE` no matter how many notes a chart has.
+`scripts/judge.gd` に1か所にまとめてあります：判定幅（どこまでずれても判定されるか）、
+各判定の配点、ランクの境界、最大スコア。スコアは正規化しているので、ノーツ数に
+関係なくフルコンボは常に `MAX_SCORE` になります。
 
-## Testing
+## テスト
 
-The tests need nothing but Godot itself: no plugin, no addon. They run
-headless, so they work on a server or in CI as well as on your machine.
+テストに必要なのは Godot 本体だけで、プラグインやアドオンは要りません。画面を出さずに
+（ヘッドレスで）動くので、手元の PC だけでなくサーバーや CI でも実行できます。
 
-### What you need
+### 必要なもの
 
-- **Godot 4.x.** The suite is verified on 4.3 stable. Download it from
-  <https://godotengine.org/download/archive/>. The standard build is enough; the
-  .NET build is not needed.
-- **bash**, for `run_tests.sh` (macOS, Linux, Git Bash or WSL on Windows). On
-  plain Windows, run the commands it wraps directly; see below.
+- **Godot 4.x**。4.3 stable で動作を確認しています。
+  <https://godotengine.org/download/archive/> からダウンロードできます。通常版で十分で、
+  .NET 版は不要です。
+- **bash**（`run_tests.sh` 用）。macOS、Linux、Windows の Git Bash や WSL で使えます。
+  bash のない Windows では、下に書いたコマンドを直接実行してください。
 
-There is no audio device on a headless machine. Godot falls back to a dummy
-audio driver, the game still runs, and the tests do not depend on hearing
-anything.
+ヘッドレス環境には音声デバイスがありません。その場合 Godot はダミーの音声ドライバーに
+切り替わってそのまま動きます。テストも、音が聞こえることには依存していません。
 
-### Running the tests
+### テストの実行
 
-From the project folder:
+プロジェクトのフォルダで：
 
 ```sh
-tests/run_tests.sh                                   # `godot` on your PATH
+tests/run_tests.sh                                   # PATH 上の godot を使う
 GODOT=~/bin/Godot_v4.3-stable_linux.x86_64 tests/run_tests.sh
 ```
 
-Without bash (PowerShell or cmd), run the two steps yourself from the project
-folder:
+bash がない場合（PowerShell やコマンドプロンプト）は、プロジェクトのフォルダで
+次の2つを順に実行します：
 
 ```sh
-godot --headless --editor --quit --path .            # first time only
+godot --headless --editor --quit --path .            # 初回のみ
 godot --headless --path . res://tests/test_runner.tscn
 ```
 
-From the editor: open `tests/test_runner.tscn` and press **F6** (Run Current
-Scene). Results appear in the Output panel.
+エディタから実行する場合は、`tests/test_runner.tscn` を開いて **F6**（Run Current Scene）を
+押します。結果は出力パネルに表示されます。
 
-A passing run looks like this and exits with code 0. Any failure exits with 1
-and prints what was expected next to what happened:
+すべて成功すると次のように表示され、終了コード 0 で終わります。1件でも失敗すると
+終了コード 1 で終わり、期待した値と実際の値が並べて表示されます：
 
 ```
   PASS  test_judge.test_exact_hit_is_perfect
@@ -161,111 +155,108 @@ and prints what was expected next to what happened:
 28 passed, 0 failed (5.9s)
 ```
 
-> **First run on a fresh checkout.** Godot only learns the global class names
-> (`Chart`, `Judge`, `Conductor`, ...) when it imports the project, and
-> `.godot/` is not committed. Without that step every script fails with
-> `Identifier "Chart" not declared`. `run_tests.sh` imports automatically when
-> `.godot/` is missing. If you add a new `class_name` and see that error, run
-> the import line above again.
+> **新しくチェックアウトした直後の初回実行について。** Godot はプロジェクトを
+> インポートしたときに初めて、グローバルなクラス名（`Chart`、`Judge`、`Conductor` など）を
+> 認識します。そして `.godot/` はリポジトリに含めていません。インポートしないままだと、
+> すべてのスクリプトが `Identifier "Chart" not declared` で失敗します。`run_tests.sh` は
+> `.godot/` がなければ自動でインポートします。新しく `class_name` を追加してこのエラーが
+> 出たときは、上のインポートのコマンドをもう一度実行してください。
 
-> **Time limit.** A script with a syntax error does not make Godot exit; it
-> sits on an empty scene forever. `run_tests.sh` therefore stops the run after
-> 90 seconds, exits with 124 and says so. Look for `SCRIPT ERROR` in the output
-> to find the broken file. Raise the limit with `TEST_TIMEOUT=300` if the suite
-> ever legitimately needs longer. (On macOS this needs `gtimeout` from
-> `brew install coreutils`; without it the run is not capped.)
+> **制限時間について。** スクリプトに文法エラーがあっても Godot は終了せず、空の画面の
+> まま待ち続けます。そのため `run_tests.sh` は90秒で実行を打ち切り、終了コード 124 で
+> 終わってその旨を表示します。出力から `SCRIPT ERROR` を探すと、壊れているファイルが
+> わかります。テストが増えて本当に時間がかかるようになったら、`TEST_TIMEOUT=300` のように
+> 上限を延ばしてください（macOS では `brew install coreutils` で入る `gtimeout` が必要です。
+> ない場合は時間制限なしで実行されます）。
 
-### Continuous integration
+### CI（GitHub Actions）
 
-`.github/workflows/tests.yml` (at the repository root, not in this folder) runs
-the same `run_tests.sh` on GitHub's servers:
+リポジトリ直下（このフォルダの外）にある `.github/workflows/tests.yml` が、同じ
+`run_tests.sh` を GitHub のサーバー上で実行します。
 
-- **When:** every push to `main`, every pull request, and on demand from the
-  Actions tab (**Run workflow**).
-- **Where to look:** the checks section at the bottom of a pull request, the
-  ✓/✗ next to each commit, and the **Actions** tab for full logs.
-- **Godot is cached.** The first run downloads Godot (about 50 MB) and saves
-  it; later runs restore it in seconds and skip the download. The log shows
-  which happened: the "Download Godot (cache miss only)" step is skipped on a
-  cache hit.
-- A pull request can use the cache from its own earlier runs and from `main`.
-  Until `main` has run once, each new pull request downloads Godot on its
-  first run. GitHub deletes caches that go unused for 7 days; the next run
-  then downloads again and re-caches.
-- **Changing the Godot version:** edit `GODOT_VERSION` at the top of the
-  workflow (a release tag such as `4.4-stable`). The cache is keyed on it, so
-  the new version is downloaded once and cached from then on.
-- A newer push to the same branch cancels the run it makes obsolete, and the
-  job is capped at 10 minutes as a backstop, so a stuck run cannot use up
-  Actions minutes.
+- **実行されるタイミング：** `main` へのプッシュ時、プルリクエストの作成・更新時、
+  Actions タブの **Run workflow** から手動で実行したとき。
+- **結果の確認場所：** プルリクエスト画面の下部のチェック欄、各コミットの横の ✓/✗、
+  詳しいログは **Actions** タブ。
+- **Godot はキャッシュされます。** 初回は Godot（約50MB）をダウンロードして保存し、
+  2回目以降は数秒で復元してダウンロードを省きます。どちらになったかはログでわかります。
+  キャッシュが使われたときは「Download Godot (cache miss only)」の手順がスキップされます。
+- プルリクエストでは、そのプルリクエスト自身の過去の実行と、`main` で保存された
+  キャッシュを使えます。`main` で一度も実行されていないうちは、新しいプルリクエストは
+  初回の実行で Godot をダウンロードします。また、7日間使われなかったキャッシュは GitHub が
+  削除するので、その次の実行で再びダウンロードして保存し直します。
+- **Godot のバージョンを変えるには：** ワークフロー先頭の `GODOT_VERSION` を書き換えます
+  （`4.4-stable` のようなリリースのタグ名）。キャッシュはこの値ごとに保存されるので、
+  新しいバージョンは一度だけダウンロードされ、以降はキャッシュから使われます。
+- 同じブランチに新しくプッシュすると、古くなった実行は自動で取り消されます。さらに念のため
+  1回の実行は最大10分で打ち切られるので、止まった実行が Actions の利用時間を使い切る
+  ことはありません。
 
-### What is covered
+### テストしている内容
 
-| File | What it checks |
+| ファイル | 確認すること |
 | --- | --- |
-| `test_judge.gd` | Window edges, early = late, rank ordering, grades. Catches a tuning edit that breaks the table, e.g. a GREAT window narrower than PERFECT. |
-| `test_chart.gd` | Beats to seconds, sorting, lane clamping, junk entries, defaults. **Also loads every chart in `songs/`**, so a broken chart fails the suite. |
-| `test_playfield.gd` | Lane positions and the time-to-screen mapping. |
-| `test_conductor.gd` | Beat length and the clock-mode fallback. |
-| `test_autoplay_run.gd` | Plays `game.tscn` for real with autoplay: spawning, scrolling, judging, scoring, the result handoff and the metronome. Expects an exact perfect score. |
-| `test_input_run.gd` | Plays it again by **sending real key events**, which exercises the key bindings and the input handling that autoplay bypasses. |
+| `test_judge.gd` | 判定幅の境界、早押しと遅押しが同じ扱いになること、判定の順序、ランク。判定表を壊す調整（例：GREAT の幅が PERFECT より狭い）を検出します。 |
+| `test_chart.gd` | 拍から秒への変換、並べ替え、範囲外のレーン番号、不正なデータ、既定値。**`songs/` の全譜面も読み込んで検査する**ので、壊れた譜面があるとテストが失敗します。 |
+| `test_playfield.gd` | レーンの位置と、時刻から画面位置への変換。 |
+| `test_conductor.gd` | 1拍の長さと、曲がないときにシステムの時計で動くこと。 |
+| `test_autoplay_run.gd` | オートプレイで `game.tscn` を実際に動かし、ノーツの出現、スクロール、判定、スコア、結果の受け渡し、メトロノームを確認します。完全なパーフェクトを期待します。 |
+| `test_input_run.gd` | **本物のキー入力イベントを送って**もう一度プレイします。オートプレイでは通らない、キー割り当てと入力処理を確認します。 |
 
-The two play tests run on the wall clock against
-`tests/fixtures/smoke.json` (5 notes, about 3 seconds each). A synthesised
-press can land up to one frame late, so the input test accepts PERFECT or
-GREAT rather than demanding PERFECT. That keeps it from failing on a slow
-machine while still catching a broken input path.
+2つのプレイテストは、`tests/fixtures/smoke.json`（5ノーツ）を実時間で遊びます
+（それぞれ約3秒）。合成したキー入力は最大1フレーム遅れて届くことがあるので、
+入力テストは PERFECT だけでなく GREAT も合格にしています。こうすることで遅いマシンでも
+誤って失敗せず、それでいて入力処理が壊れていれば検出できます。
 
-The play tests put the game scene inside the test runner instead of switching
-to it. `game.gd` emits `run_finished(result)` and only changes scene when it is
-the scene being played, which is what makes that possible.
+プレイテストでは、ゲーム画面に切り替えるのではなく、ゲームのシーンをテストランナーの
+中に入れて動かします。`game.gd` は終了時に `run_finished(result)` を発行し、自分が
+プレイ中のシーンであるときだけ画面遷移するので、これが可能になっています。
 
-### Adding a test
+### テストを追加する
 
-Unit test: create `tests/test_something.gd`, extend `TestCase`, write methods
-whose names start with `test_`, and add the script to `UNIT_TESTS` in
-`test_runner.gd`. Each method gets a fresh instance.
+単体テストの場合：`tests/test_something.gd` を作って `TestCase` を継承し、名前が `test_` で
+始まるメソッドを書いて、`test_runner.gd` の `UNIT_TESTS` にそのスクリプトを追加します。
+メソッドごとに新しいインスタンスが作られます。
 
 ```gdscript
 extends TestCase
 
 func test_quarter_note_at_60_bpm() -> void:
 	var chart := Chart.from_dict({"bpm": 60, "notes": [{"beat": 1, "lane": 0}]})
-	check_near(chart.notes[0].time, 1.0, "one beat is one second")
+	check_near(chart.notes[0].time, 1.0, "60 BPM では1拍が1秒")
 ```
 
-Available checks: `check(condition, message)`, `check_eq(actual, expected,
-message)` and `check_near(actual, expected, message, tolerance)`. GDScript has
-no exceptions, so a failed check records the message and the test continues.
+使えるチェックは `check(condition, message)`、`check_eq(actual, expected, message)`、
+`check_near(actual, expected, message, tolerance)` の3つです。GDScript には例外がないので、
+チェックに失敗してもメッセージを記録して、テストはそのまま続きます。
 
-Test that needs the running game: extend `PlayTest` instead, override
-`run(host)`, and add it to `PLAY_TESTS`. `test_input_run.gd` is the example to
-copy.
+ゲームを実際に動かすテストの場合：代わりに `PlayTest` を継承し、`run(host)` を上書きして、
+`PLAY_TESTS` に追加します。`test_input_run.gd` が見本になります。
 
-### What the tests cannot tell you
+### テストでは確かめられないこと
 
-Headless means nothing is drawn and nothing is heard. Check these by hand
-after changing the playfield, the HUD or the timing code:
+ヘッドレスでは何も描画されず、音も鳴りません。レーン、HUD、タイミングまわりのコードを
+変えたら、次の点は手で確認してください：
 
-- [ ] The lanes, notes and judge line look right at the window size you ship.
-- [ ] HUD text fits and does not overlap the playfield.
-- [ ] With a real song, notes land on the beat you hear. If they are
-      consistently early or late, adjust the chart's `offset`.
-- [ ] Hit and miss sounds play, and the metronome plays when there is no music.
+- [ ] 出荷するウィンドウサイズで、レーン・ノーツ・判定ラインの見た目が正しい。
+- [ ] HUD の文字が収まっていて、レーンに重なっていない。
+- [ ] 実際の曲で、聞こえる拍の位置にノーツが来る。いつも早い・遅い場合は譜面の `offset` を調整する。
+- [ ] ヒット音とミス音が鳴り、曲がないときはメトロノームが鳴る。
 
-### Exporting
+### 書き出し時の注意
 
-`tests/` ships in exported builds unless you exclude it. Add `tests/*` to
-**Project > Export > Resources > Filters to exclude files/folders**.
+除外しない限り、`tests/` は書き出したゲームにも含まれます。エクスポート設定の
+**Resources** タブにある **Filters to exclude files/folders from project**（英語 UI での名称）に
+`tests/*` を追加してください。
 
-## Where to go next
+## 次に手を付けるなら
 
-- **Hold notes.** `ChartNote.Kind` already exists with only `TAP` in it; the
-  loader will pass a `kind` through untouched. The work is in `game.gd`
-  (judging a release) and `note.gd` (drawing a tail).
-- **Hit effects.** `Playfield.flash()` is the hook — it already fires on every
-  key press.
-- **Real graphics.** `note.gd` and `playfield.gd` draw everything in code;
-  swap `_draw()` for sprites.
-- **Per-note offset calibration.** The conductor's `offset` is global; a
-  calibration screen that measures the player's own latency would set it.
+- **ロングノーツ。** `ChartNote.Kind` は既にあり、今は `TAP` だけが入っています。
+  読み込み側は `kind` をそのまま通すので、作業は `game.gd`（離したときの判定）と
+  `note.gd`（尾の描画）が中心になります。
+- **判定エフェクト。** `Playfield.flash()` がちょうど良い差し込み口です。すでにキーを
+  押すたびに呼ばれています。
+- **本格的な画像。** `note.gd` と `playfield.gd` はすべてコードで描いています。
+  `_draw()` をスプライトに置き換えてください。
+- **タイミング調整画面。** コンダクターの `offset` は全体共通の値です。プレイヤー自身の
+  入力遅延を測る調整画面を作れば、この値を自動で設定できます。
