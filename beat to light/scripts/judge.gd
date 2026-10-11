@@ -3,25 +3,34 @@ extends RefCounted
 
 ## Timing windows and scoring weights. Tune the game's feel from here.
 
-enum Rank { PERFECT, GREAT, GOOD, MISS }
+enum Rank { CRITICAL, PERFECT, GREAT, GOOD, MISS }
 
 ## Largest timing error, in seconds, that still earns each rank.
 ## Anything worse than GOOD is a miss.
 const WINDOW := {
-	Rank.PERFECT: 0.045,
-	Rank.GREAT: 0.090,
+	Rank.CRITICAL: 0.025,
+	Rank.PERFECT: 0.040,
+	Rank.GREAT: 0.080,
 	Rank.GOOD: 0.150,
 }
 
-## How much of a note's value each rank is worth.
+## A hidden tier inside CRITICAL. It is shown and scored exactly like CRITICAL,
+## but counted separately (the result's "inner_critical") so the tightest
+## timing can be told apart later.
+const INNER_CRITICAL_WINDOW := 0.016
+
+## How much of a note's value each rank is worth. Only CRITICAL earns the
+## full value, so a perfect score takes CRITICAL timing, not just PERFECT.
 const WEIGHT := {
-	Rank.PERFECT: 1.0,
-	Rank.GREAT: 0.7,
-	Rank.GOOD: 0.4,
+	Rank.CRITICAL: 1.0,
+	Rank.PERFECT: 0.95,
+	Rank.GREAT: 0.5,
+	Rank.GOOD: 0.2,
 	Rank.MISS: 0.0,
 }
 
 const RANK_NAME := {
+	Rank.CRITICAL: "CRITICAL",
 	Rank.PERFECT: "PERFECT",
 	Rank.GREAT: "GREAT",
 	Rank.GOOD: "GOOD",
@@ -29,13 +38,19 @@ const RANK_NAME := {
 }
 
 const RANK_COLOR := {
+	Rank.CRITICAL: Color("ff8ad8"),
 	Rank.PERFECT: Color("ffe66d"),
 	Rank.GREAT: Color("6dd3ff"),
 	Rank.GOOD: Color("8ee97f"),
 	Rank.MISS: Color("ff6b6b"),
 }
 
-## A full-score run is worth this much, no matter how many notes it has.
+## A hold is judged once. Its head sets the rank, which only stands if the key
+## stays down to the end; letting go earlier turns it into a MISS. Letting go
+## within this many seconds of the end still counts as holding to the end.
+const HOLD_RELEASE_GRACE := 0.150
+
+## An all-CRITICAL run is worth this much, no matter how many notes it has.
 const MAX_SCORE := 1_000_000
 
 ## Rank boundaries for the result screen, best first.
@@ -54,6 +69,8 @@ static func hit_window() -> float:
 ## [param error] is seconds late (positive) or early (negative).
 static func rank_for(error: float) -> Rank:
 	var distance := absf(error)
+	if distance <= WINDOW[Rank.CRITICAL]:
+		return Rank.CRITICAL
 	if distance <= WINDOW[Rank.PERFECT]:
 		return Rank.PERFECT
 	if distance <= WINDOW[Rank.GREAT]:
@@ -61,6 +78,10 @@ static func rank_for(error: float) -> Rank:
 	if distance <= WINDOW[Rank.GOOD]:
 		return Rank.GOOD
 	return Rank.MISS
+
+## True when [param error] falls in the hidden tier inside CRITICAL.
+static func is_inner_critical(error: float) -> bool:
+	return absf(error) <= INNER_CRITICAL_WINDOW
 
 static func grade_for(accuracy: float) -> String:
 	for grade: Array in GRADES:
