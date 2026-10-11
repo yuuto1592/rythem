@@ -11,6 +11,10 @@
     {"beat": 3, "lane": 1},
     {"beat": 4, "lane": 2},
     {"beat": 4, "lane": 3},
-    {"beat": 5, "lane": 0}
+    {"beat": 5, "lane": 0},
+    {"beat": 6, "lane": 1, "length": 2},
+    {"beat": 7, "lane": 3},
+    {"beat": 9, "lane": 2, "length": 1},
+    {"beat": 9, "lane": 3, "length": 1}
   ]
 }

@@ -47,6 +47,43 @@ func test_length_is_last_note_time() -> void:
 	var chart := Chart.from_dict({"bpm": 60, "notes": [{"beat": 1, "lane": 0}, {"beat": 7, "lane": 0}]})
 	check_near(chart.length(), 7.0, "length")
 
+func test_length_in_beats_makes_a_hold() -> void:
+	var chart := Chart.from_dict({"bpm": 120, "notes": [{"beat": 4, "lane": 1, "length": 2}]})
+	var note := chart.notes[0]
+	check_eq(note.kind, ChartNote.Kind.HOLD, "kind")
+	check_near(note.time, 2.0, "head at beat 4")
+	check_near(note.end_time, 3.0, "tail two beats later")
+
+func test_duration_overrides_length() -> void:
+	var chart := Chart.from_dict({"bpm": 120, "notes": [{"beat": 4, "length": 2, "duration": 0.25, "lane": 0}]})
+	check_near(chart.notes[0].end_time, 2.25, "explicit duration wins")
+
+func test_no_length_means_a_tap() -> void:
+	var chart := Chart.from_dict({"notes": [
+		{"beat": 1, "lane": 0},
+		{"beat": 2, "lane": 0, "length": 0},
+		{"beat": 3, "lane": 0, "length": -2},
+	]})
+	for note in chart.notes:
+		check_eq(note.kind, ChartNote.Kind.TAP, "tap at %.2fs" % note.time)
+		check_near(note.end_time, note.time, "tap ends where it starts")
+
+func test_a_hold_counts_twice() -> void:
+	var chart := Chart.from_dict({"notes": [
+		{"beat": 1, "lane": 0},
+		{"beat": 2, "lane": 1, "length": 1},
+		{"beat": 3, "lane": 2},
+	]})
+	check_eq(chart.judgement_count(), 4, "two taps + a hold's head and tail")
+
+func test_length_includes_a_hold_that_outlasts_later_notes() -> void:
+	# The hold starts first but ends last; the song must not stop at the tap.
+	var chart := Chart.from_dict({"bpm": 60, "notes": [
+		{"beat": 1, "lane": 0, "length": 8},
+		{"beat": 4, "lane": 1},
+	]})
+	check_near(chart.length(), 9.0, "ends with the hold")
+
 func test_bundled_charts_are_valid() -> void:
 	# Every chart that ships in songs/ must load and make sense.
 	var paths := GameState.list_charts()
@@ -58,10 +95,15 @@ func test_bundled_charts_are_valid() -> void:
 			continue
 		check(not chart.notes.is_empty(), "%s has notes" % path)
 		var previous := -INF
+		var lane_free_at := {}
 		for note in chart.notes:
 			check(note.lane >= 0 and note.lane < chart.lane_count, "%s: lane %d in range" % [path, note.lane])
 			check(note.time >= previous, "%s: sorted at %.3fs" % [path, note.time])
 			previous = note.time
+			# A key held down for a hold cannot also hit the next note in its lane.
+			check(note.time > lane_free_at.get(note.lane, -INF),
+					"%s: note at %.3fs in lane %d does not start inside a hold" % [path, note.time, note.lane])
+			lane_free_at[note.lane] = note.end_time if note.kind == ChartNote.Kind.HOLD else -INF
 		# A first note earlier than one scroll length would appear already
 		# part-way down the screen.
 		check(chart.notes[0].time >= chart.scroll_time,

@@ -1,30 +1,49 @@
 extends TestCase
 
-func test_exact_hit_is_perfect() -> void:
-	check_eq(Judge.rank_for(0.0), Judge.Rank.PERFECT, "zero error")
+const ORDER := [
+	Judge.Rank.CRITICAL,
+	Judge.Rank.PERFECT,
+	Judge.Rank.GREAT,
+	Judge.Rank.GOOD,
+	Judge.Rank.MISS,
+]
+
+func test_exact_hit_is_critical() -> void:
+	check_eq(Judge.rank_for(0.0), Judge.Rank.CRITICAL, "zero error")
+
+func test_critical_is_25ms_either_way() -> void:
+	check_eq(Judge.rank_for(0.025), Judge.Rank.CRITICAL, "25ms late")
+	check_eq(Judge.rank_for(-0.025), Judge.Rank.CRITICAL, "25ms early")
+	check_eq(Judge.rank_for(0.026), Judge.Rank.PERFECT, "26ms late")
+	check_eq(Judge.rank_for(-0.026), Judge.Rank.PERFECT, "26ms early")
 
 func test_window_edges_are_inclusive() -> void:
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.PERFECT]), Judge.Rank.PERFECT, "PERFECT edge")
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.GREAT]), Judge.Rank.GREAT, "GREAT edge")
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.GOOD]), Judge.Rank.GOOD, "GOOD edge")
+	for rank in [Judge.Rank.CRITICAL, Judge.Rank.PERFECT, Judge.Rank.GREAT, Judge.Rank.GOOD]:
+		check_eq(Judge.rank_for(Judge.WINDOW[rank]), rank, "%s edge" % Judge.RANK_NAME[rank])
 
 func test_just_past_each_edge_drops_a_rank() -> void:
 	var nudge := 0.001
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.PERFECT] + nudge), Judge.Rank.GREAT, "past PERFECT")
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.GREAT] + nudge), Judge.Rank.GOOD, "past GREAT")
-	check_eq(Judge.rank_for(Judge.WINDOW[Judge.Rank.GOOD] + nudge), Judge.Rank.MISS, "past GOOD")
+	for i in ORDER.size() - 1:
+		var rank: Judge.Rank = ORDER[i]
+		check_eq(Judge.rank_for(Judge.WINDOW[rank] + nudge), ORDER[i + 1], "past %s" % Judge.RANK_NAME[rank])
 
 func test_early_and_late_are_judged_the_same() -> void:
-	for error in [0.02, 0.07, 0.12, 0.3]:
-		check_eq(Judge.rank_for(-error), Judge.rank_for(error), "±%.2fs" % error)
+	for error in [0.01, 0.035, 0.07, 0.12, 0.3]:
+		check_eq(Judge.rank_for(-error), Judge.rank_for(error), "±%.3fs" % error)
 
 func test_windows_widen_and_weights_fall_with_rank() -> void:
 	# Guards against an edit that puts the tuning table out of order.
-	check(Judge.WINDOW[Judge.Rank.PERFECT] < Judge.WINDOW[Judge.Rank.GREAT], "PERFECT < GREAT window")
-	check(Judge.WINDOW[Judge.Rank.GREAT] < Judge.WINDOW[Judge.Rank.GOOD], "GREAT < GOOD window")
-	check(Judge.WEIGHT[Judge.Rank.PERFECT] > Judge.WEIGHT[Judge.Rank.GREAT], "PERFECT > GREAT weight")
-	check(Judge.WEIGHT[Judge.Rank.GREAT] > Judge.WEIGHT[Judge.Rank.GOOD], "GREAT > GOOD weight")
-	check(Judge.WEIGHT[Judge.Rank.GOOD] > Judge.WEIGHT[Judge.Rank.MISS], "GOOD > MISS weight")
+	for i in ORDER.size() - 1:
+		var better: Judge.Rank = ORDER[i]
+		var worse: Judge.Rank = ORDER[i + 1]
+		var names := "%s vs %s" % [Judge.RANK_NAME[better], Judge.RANK_NAME[worse]]
+		check(Judge.WEIGHT[better] > Judge.WEIGHT[worse], "weight " + names)
+		if Judge.WINDOW.has(worse):
+			check(Judge.WINDOW[better] < Judge.WINDOW[worse], "window " + names)
+
+func test_only_critical_earns_full_value() -> void:
+	check_eq(Judge.WEIGHT[Judge.Rank.CRITICAL], 1.0, "CRITICAL weight")
+	check(Judge.WEIGHT[Judge.Rank.PERFECT] < 1.0, "PERFECT is worth less than CRITICAL")
 
 func test_hit_window_is_the_widest_window() -> void:
 	check_eq(Judge.hit_window(), Judge.WINDOW[Judge.Rank.GOOD], "hit_window()")

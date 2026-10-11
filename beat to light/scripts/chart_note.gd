@@ -5,17 +5,25 @@ extends RefCounted
 
 enum Kind {
 	TAP, ## A single press on the note's lane.
+	HOLD, ## Press at [member time] and keep the key down until [member end_time].
 }
 
 ## When the note should be hit, in seconds from the start of the chart.
 var time := 0.0
+## When a HOLD may be let go. Equal to [member time] for a TAP.
+var end_time := 0.0
 ## Zero-based lane index.
 var lane := 0
-## Reserved for hold/slide notes. Chart.from_dict does not read a kind from
-## the JSON yet, so every loaded note is a TAP.
+## Derived from the length: anything that lasts is a HOLD.
 var kind := Kind.TAP
 
-func _init(p_time := 0.0, p_lane := 0, p_kind := Kind.TAP) -> void:
+func _init(p_time := 0.0, p_lane := 0, p_end_time := 0.0) -> void:
 	time = p_time
 	lane = p_lane
-	kind = p_kind
+	end_time = maxf(p_end_time, p_time)
+	kind = Kind.HOLD if end_time > time else Kind.TAP
+
+## How many judgements this note produces: the head, plus the tail of a HOLD.
+## Each one counts towards combo and score.
+func judgement_count() -> int:
+	return 2 if kind == Kind.HOLD else 1

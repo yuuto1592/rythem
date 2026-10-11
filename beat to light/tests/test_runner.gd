@@ -16,6 +16,7 @@ const UNIT_TESTS: Array[GDScript] = [
 const PLAY_TESTS: Array[GDScript] = [
 	preload("res://tests/test_autoplay_run.gd"),
 	preload("res://tests/test_input_run.gd"),
+	preload("res://tests/test_hold_rules_run.gd"),
 ]
 
 ## Longer than the longest sound effect in sfx.gd.

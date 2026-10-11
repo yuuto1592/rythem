@@ -23,9 +23,21 @@ var music_path := ""
 ## Sorted by [member ChartNote.time], ascending.
 var notes: Array[ChartNote] = []
 
-## Seconds from chart start to the last note.
+## Seconds from chart start until the last note is over, including the end
+## of a hold that outlasts later notes.
 func length() -> float:
-	return notes[-1].time if not notes.is_empty() else 0.0
+	var last := 0.0
+	for note in notes:
+		last = maxf(last, note.end_time)
+	return last
+
+## Total judgements in the chart: the most combo a run can reach, and the
+## basis the score is normalised against.
+func judgement_count() -> int:
+	var total := 0
+	for note in notes:
+		total += note.judgement_count()
+	return total
 
 func seconds_per_beat() -> float:
 	return 60.0 / maxf(bpm, 1.0)
@@ -60,7 +72,9 @@ static func from_dict(data: Dictionary) -> Chart:
 		var lane := clampi(int(note.get("lane", 0)), 0, chart.lane_count - 1)
 		# "time" (seconds) wins over "beat" so one-off notes can be placed by hand.
 		var time := float(note["time"]) if note.has("time") else float(note.get("beat", 0.0)) * spb
-		chart.notes.append(ChartNote.new(time, lane))
+		# Likewise "duration" (seconds) wins over "length" (beats). Either makes a hold.
+		var duration := float(note["duration"]) if note.has("duration") else float(note.get("length", 0.0)) * spb
+		chart.notes.append(ChartNote.new(time, lane, time + maxf(duration, 0.0)))
 
 	chart.notes.sort_custom(func(a: ChartNote, b: ChartNote) -> bool: return a.time < b.time)
 	return chart
