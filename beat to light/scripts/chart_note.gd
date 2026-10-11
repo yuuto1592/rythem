@@ -22,8 +22,3 @@ func _init(p_time := 0.0, p_lane := 0, p_end_time := 0.0) -> void:
 	lane = p_lane
 	end_time = maxf(p_end_time, p_time)
 	kind = Kind.HOLD if end_time > time else Kind.TAP
-
-## How many judgements this note produces: the head, plus the tail of a HOLD.
-## Each one counts towards combo and score.
-func judgement_count() -> int:
-	return 2 if kind == Kind.HOLD else 1

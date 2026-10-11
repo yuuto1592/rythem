@@ -10,9 +10,9 @@ extends Node2D
 ## Emitted once the chart is over, with the same dictionary that is left in
 ## GameState.last_result.
 signal run_finished(result: Dictionary)
-## Emitted for every judgement: a tap, the head of a hold, or its tail. The hook
-## for hit effects.
-signal note_judged(lane: int, rank: Judge.Rank, is_tail: bool)
+## Emitted once per note, when its judgement is final: on the hit for a tap, at
+## the end (or the early release) for a hold. The hook for hit effects.
+signal note_judged(lane: int, rank: Judge.Rank)
 
 ## Seconds of quiet after the last note before the result screen appears.
 const OUTRO := 1.5
@@ -29,8 +29,6 @@ var _active: Array[Note] = []
 var _spawn_index := 0
 ## The hold whose key is down in each lane, if any. Lane -> Note.
 var _held := {}
-## Chart.judgement_count(), cached: the denominator of the score.
-var _total_judgements := 0
 
 var _counts := {}
 var _combo := 0
@@ -52,7 +50,6 @@ func _ready() -> void:
 		return
 
 	_autoplay = GameState.autoplay
-	_total_judgements = _chart.judgement_count()
 	KeyBinds.ensure_actions(_chart.lane_count)
 	_playfield.configure(_chart.lane_count, _chart.scroll_time)
 
@@ -140,9 +137,9 @@ func _judge_by_time(note: Note, now: float) -> void:
 			_judge_head(note, late)
 	elif note.holding:
 		_playfield.flash(note.lane)
-		# Kept down all the way: the tail is as good as a release right on time.
+		# Kept down to the end: the rank the head earned stands.
 		if now >= note.end_time:
-			_judge_tail(note, 0.0)
+			_finish_hold(note, note.head_rank)
 
 ## Judges the head of the note closest to the judge line in [param lane]. A
 ## press with no note in range is ignored rather than punished.
@@ -160,29 +157,34 @@ func _press_lane(lane: int) -> void:
 	if target != null and best <= Judge.hit_window():
 		_judge_head(target, now - target.time)
 
-## Letting go of a hold before its end judges the tail by how early it was.
-## Letting go afterwards does nothing: the tail already completed itself.
+## Letting go of a hold before its end turns it into a MISS, unless the end is
+## within Judge.HOLD_RELEASE_GRACE. Letting go after the end does nothing: the
+## hold has already completed itself.
 func _release_lane(lane: int) -> void:
 	var note: Note = _held.get(lane)
-	if note != null:
-		_judge_tail(note, _conductor.chart_time - note.end_time)
+	if note == null:
+		return
+	var early := note.end_time - _conductor.chart_time
+	_finish_hold(note, note.head_rank if early <= Judge.HOLD_RELEASE_GRACE else Judge.Rank.MISS)
 
 func _judge_head(note: Note, error: float) -> void:
 	note.head_judged = true
 	var rank := Judge.rank_for(error)
-	_record(rank, note.lane, false)
-	if not note.is_hold():
+	if not note.is_hold() or rank == Judge.Rank.MISS:
+		_record(rank, note.lane)
 		_finish(note)
-	elif rank == Judge.Rank.MISS:
-		# Missing the head drops the whole hold, tail included.
-		_record(Judge.Rank.MISS, note.lane, true)
-		_finish(note)
-	else:
-		note.holding = true
-		_held[note.lane] = note
+		return
+	# A hit hold is not scored yet: its rank only stands if the key stays down.
+	# Show it now anyway, so the press gets the same instant feedback as a tap.
+	note.head_rank = rank
+	note.holding = true
+	_held[note.lane] = note
+	_announce(rank)
 
-func _judge_tail(note: Note, error: float) -> void:
-	_record(Judge.rank_for(error), note.lane, true)
+## Scores a hold once it is over. Its rank was already shown when the head was
+## hit, so only a dropped hold is announced again.
+func _finish_hold(note: Note, rank: Judge.Rank) -> void:
+	_record(rank, note.lane, rank == Judge.Rank.MISS)
 	_finish(note)
 
 func _finish(note: Note) -> void:
@@ -192,22 +194,29 @@ func _finish(note: Note) -> void:
 	note.done = true
 	note.visible = false
 
-func _record(rank: Judge.Rank, lane: int, is_tail: bool) -> void:
+func _record(rank: Judge.Rank, lane: int, announce := true) -> void:
 	_counts[rank] += 1
 	_judged += 1
 	_earned += Judge.WEIGHT[rank]
 
 	if rank == Judge.Rank.MISS:
 		_combo = 0
-		Sfx.play_miss()
 	else:
 		_combo += 1
 		_max_combo = maxi(_max_combo, _combo)
-		Sfx.play_hit()
 
-	_hud.show_judgement(rank)
+	if announce:
+		_announce(rank)
 	_refresh_hud()
-	note_judged.emit(lane, rank, is_tail)
+	note_judged.emit(lane, rank)
+
+## The sound and the on-screen word for a judgement.
+func _announce(rank: Judge.Rank) -> void:
+	if rank == Judge.Rank.MISS:
+		Sfx.play_miss()
+	else:
+		Sfx.play_hit()
+	_hud.show_judgement(rank)
 
 func _refresh_hud() -> void:
 	_hud.set_score(_score())
@@ -217,9 +226,9 @@ func _refresh_hud() -> void:
 ## Normalised so an all-CRITICAL run is always Judge.MAX_SCORE, whatever the
 ## note count.
 func _score() -> int:
-	if _total_judgements == 0:
+	if _chart.notes.is_empty():
 		return 0
-	return int(round(Judge.MAX_SCORE * _earned / float(_total_judgements)))
+	return int(round(Judge.MAX_SCORE * _earned / float(_chart.notes.size())))
 
 func _accuracy() -> float:
 	return _earned / float(_judged) if _judged > 0 else 0.0
@@ -246,10 +255,9 @@ func _build_result() -> Dictionary:
 		"grade": Judge.grade_for(accuracy),
 		"max_combo": _max_combo,
 		"note_count": _chart.notes.size(),
-		"judgement_count": _total_judgements,
 		"counts": _counts.duplicate(),
 		"autoplay": _autoplay,
-		"full_combo": _counts[Judge.Rank.MISS] == 0 and _judged == _total_judgements,
+		"full_combo": _counts[Judge.Rank.MISS] == 0 and _judged == _chart.notes.size(),
 	}
 
 func _load_music() -> AudioStream:

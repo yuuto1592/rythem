@@ -31,14 +31,6 @@ func length() -> float:
 		last = maxf(last, note.end_time)
 	return last
 
-## Total judgements in the chart: the most combo a run can reach, and the
-## basis the score is normalised against.
-func judgement_count() -> int:
-	var total := 0
-	for note in notes:
-		total += note.judgement_count()
-	return total
-
 func seconds_per_beat() -> float:
 	return 60.0 / maxf(bpm, 1.0)
 

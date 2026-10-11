@@ -32,7 +32,7 @@ func _render(result: Dictionary) -> void:
 
 	var parts: PackedStringArray = []
 	parts.append("Accuracy %.2f%%" % (float(result.get("accuracy", 0.0)) * 100.0))
-	parts.append("Max combo %d / %d" % [int(result.get("max_combo", 0)), int(result.get("judgement_count", 0))])
+	parts.append("Max combo %d / %d" % [int(result.get("max_combo", 0)), int(result.get("note_count", 0))])
 	if bool(result.get("full_combo", false)):
 		parts.append("FULL COMBO")
 	if bool(result.get("autoplay", false)):

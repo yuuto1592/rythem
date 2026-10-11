@@ -14,7 +14,8 @@ var game: Node
 var conductor: Conductor
 var result := {}
 var beats_heard := 0
-## Every judgement in the order it happened: {lane, rank, is_tail}.
+## Every judgement in the order it happened: {lane, rank, at}, where [code]at[/code]
+## is the chart time it was made.
 var judgements: Array[Dictionary] = []
 
 var _finished := false
@@ -65,14 +66,6 @@ func play_to_end(host: Node) -> void:
 	GameState.chart_path = _saved_chart_path
 	GameState.autoplay = _saved_autoplay
 
-## The ranks judged in [param lane], in the order they happened.
-func ranks_in_lane(lane: int) -> Array[Judge.Rank]:
-	var ranks: Array[Judge.Rank] = []
-	for j in judgements:
-		if j.lane == lane:
-			ranks.append(j.rank)
-	return ranks
-
 func _send_due_keys() -> void:
 	while not _key_schedule.is_empty() and _key_schedule[0].time <= conductor.chart_time:
 		var key: Dictionary = _key_schedule.pop_front()
@@ -84,8 +77,8 @@ func _send_due_keys() -> void:
 func _on_beat_hit(_index: int) -> void:
 	beats_heard += 1
 
-func _on_note_judged(lane: int, rank: Judge.Rank, is_tail: bool) -> void:
-	judgements.append({"lane": lane, "rank": rank, "is_tail": is_tail})
+func _on_note_judged(lane: int, rank: Judge.Rank) -> void:
+	judgements.append({"lane": lane, "rank": rank, "at": conductor.chart_time})
 
 func _on_run_finished(p_result: Dictionary) -> void:
 	_finished = true

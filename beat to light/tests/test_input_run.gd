@@ -20,12 +20,10 @@ func run(host: Node) -> void:
 	if result.is_empty():
 		return
 
-	var total := chart.judgement_count()
+	var total := chart.notes.size()
 	check_eq(result["counts"][Judge.Rank.MISS], 0, "no misses")
 	check_eq(result["counts"][Judge.Rank.GOOD], 0, "nothing worse than GREAT")
 	check_eq(result["max_combo"], total, "max combo")
 	check_eq(result["full_combo"], true, "full combo")
 	check_eq(result["autoplay"], false, "not flagged as autoplay")
-	for j in judgements:
-		if j.is_tail:
-			check_eq(j.rank, Judge.Rank.CRITICAL, "lane %d: a hold kept down to the end ends CRITICAL" % j.lane)
+	check_eq(judgements.size(), total, "one judgement per note, holds included")

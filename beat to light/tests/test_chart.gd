@@ -68,14 +68,6 @@ func test_no_length_means_a_tap() -> void:
 		check_eq(note.kind, ChartNote.Kind.TAP, "tap at %.2fs" % note.time)
 		check_near(note.end_time, note.time, "tap ends where it starts")
 
-func test_a_hold_counts_twice() -> void:
-	var chart := Chart.from_dict({"notes": [
-		{"beat": 1, "lane": 0},
-		{"beat": 2, "lane": 1, "length": 1},
-		{"beat": 3, "lane": 2},
-	]})
-	check_eq(chart.judgement_count(), 4, "two taps + a hold's head and tail")
-
 func test_length_includes_a_hold_that_outlasts_later_notes() -> void:
 	# The hold starts first but ends last; the song must not stop at the tap.
 	var chart := Chart.from_dict({"bpm": 60, "notes": [

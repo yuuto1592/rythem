@@ -21,6 +21,8 @@ var lane := 0
 var head_judged := false
 ## The head of a hold was hit and its key is still down.
 var holding := false
+## What the head of a hold earned. It is only scored if the hold is kept to the end.
+var head_rank := Judge.Rank.MISS
 ## Every judgement this note produces is in; it can be removed.
 var done := false
 

@@ -6,16 +6,16 @@ extends PlayTest
 
 func run(host: Node) -> void:
 	var chart := expected_chart()
-	var total := chart.judgement_count()
-	check(total > chart.notes.size(), "fixture includes holds")
+	var total := chart.notes.size()
+	check(chart.notes.any(func(n: ChartNote) -> bool: return n.kind == ChartNote.Kind.HOLD),
+			"fixture includes holds")
 
 	start_game(host, true)
 	await play_to_end(host)
 	if result.is_empty():
 		return
 
-	check_eq(result["note_count"], chart.notes.size(), "note count")
-	check_eq(result["judgement_count"], total, "judgement count")
+	check_eq(result["note_count"], total, "note count")
 	check_eq(result["counts"][Judge.Rank.CRITICAL], total, "all CRITICAL")
 	check_eq(result["counts"][Judge.Rank.MISS], 0, "no misses")
 	check_eq(result["max_combo"], total, "max combo")
@@ -24,6 +24,6 @@ func run(host: Node) -> void:
 	check_eq(result["full_combo"], true, "full combo")
 	check_eq(result["autoplay"], true, "flagged as autoplay")
 	check_eq(GameState.last_result, result, "result handed to GameState")
-	check_eq(judgements.size(), total, "one note_judged signal per judgement")
+	check_eq(judgements.size(), total, "one judgement per note, holds included")
 	# Without music the conductor runs the metronome, so beats must be ticking.
 	check(beats_heard >= 5, "conductor emitted beats (got %d)" % beats_heard)

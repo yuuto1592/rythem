@@ -40,6 +40,11 @@ const RANK_COLOR := {
 	Rank.MISS: Color("ff6b6b"),
 }
 
+## A hold is judged once. Its head sets the rank, which only stands if the key
+## stays down to the end; letting go earlier turns it into a MISS. Letting go
+## within this many seconds of the end still counts as holding to the end.
+const HOLD_RELEASE_GRACE := 0.150
+
 ## An all-CRITICAL run is worth this much, no matter how many notes it has.
 const MAX_SCORE := 1_000_000
 
