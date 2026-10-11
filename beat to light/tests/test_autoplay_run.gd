@@ -17,6 +17,7 @@ func run(host: Node) -> void:
 
 	check_eq(result["note_count"], total, "note count")
 	check_eq(result["counts"][Judge.Rank.CRITICAL], total, "all CRITICAL")
+	check_eq(result["inner_critical"], total, "all inside the hidden inner window too")
 	check_eq(result["counts"][Judge.Rank.MISS], 0, "no misses")
 	check_eq(result["max_combo"], total, "max combo")
 	check_eq(result["score"], Judge.MAX_SCORE, "score")

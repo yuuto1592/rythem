@@ -25,5 +25,8 @@ func run(host: Node) -> void:
 	check_eq(result["counts"][Judge.Rank.GOOD], 0, "nothing worse than GREAT")
 	check_eq(result["max_combo"], total, "max combo")
 	check_eq(result["full_combo"], true, "full combo")
+	check(result["inner_critical"] <= result["counts"][Judge.Rank.CRITICAL],
+			"inner CRITICALs are a subset of CRITICALs (got %d of %d)"
+			% [result["inner_critical"], result["counts"][Judge.Rank.CRITICAL]])
 	check_eq(result["autoplay"], false, "not flagged as autoplay")
 	check_eq(judgements.size(), total, "one judgement per note, holds included")

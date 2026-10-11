@@ -9,18 +9,23 @@ enum Rank { CRITICAL, PERFECT, GREAT, GOOD, MISS }
 ## Anything worse than GOOD is a miss.
 const WINDOW := {
 	Rank.CRITICAL: 0.025,
-	Rank.PERFECT: 0.045,
-	Rank.GREAT: 0.090,
+	Rank.PERFECT: 0.040,
+	Rank.GREAT: 0.080,
 	Rank.GOOD: 0.150,
 }
+
+## A hidden tier inside CRITICAL. It is shown and scored exactly like CRITICAL,
+## but counted separately (the result's "inner_critical") so the tightest
+## timing can be told apart later.
+const INNER_CRITICAL_WINDOW := 0.016
 
 ## How much of a note's value each rank is worth. Only CRITICAL earns the
 ## full value, so a perfect score takes CRITICAL timing, not just PERFECT.
 const WEIGHT := {
 	Rank.CRITICAL: 1.0,
 	Rank.PERFECT: 0.95,
-	Rank.GREAT: 0.7,
-	Rank.GOOD: 0.4,
+	Rank.GREAT: 0.5,
+	Rank.GOOD: 0.2,
 	Rank.MISS: 0.0,
 }
 
@@ -73,6 +78,10 @@ static func rank_for(error: float) -> Rank:
 	if distance <= WINDOW[Rank.GOOD]:
 		return Rank.GOOD
 	return Rank.MISS
+
+## True when [param error] falls in the hidden tier inside CRITICAL.
+static func is_inner_critical(error: float) -> bool:
+	return absf(error) <= INNER_CRITICAL_WINDOW
 
 static func grade_for(accuracy: float) -> String:
 	for grade: Array in GRADES:

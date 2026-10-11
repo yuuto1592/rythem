@@ -36,6 +36,8 @@ var _max_combo := 0
 ## Sum of Judge.WEIGHT over judged notes; the basis for score and accuracy.
 var _earned := 0.0
 var _judged := 0
+## Judgements inside Judge.INNER_CRITICAL_WINDOW. Never shown; kept in the result.
+var _inner_critical := 0
 var _autoplay := false
 var _running := false
 
@@ -139,7 +141,7 @@ func _judge_by_time(note: Note, now: float) -> void:
 		_playfield.flash(note.lane)
 		# Kept down to the end: the rank the head earned stands.
 		if now >= note.end_time:
-			_finish_hold(note, note.head_rank)
+			_finish_hold(note, note.head_rank, note.head_inner)
 
 ## Judges the head of the note closest to the judge line in [param lane]. A
 ## press with no note in range is ignored rather than punished.
@@ -165,26 +167,31 @@ func _release_lane(lane: int) -> void:
 	if note == null:
 		return
 	var early := note.end_time - _conductor.chart_time
-	_finish_hold(note, note.head_rank if early <= Judge.HOLD_RELEASE_GRACE else Judge.Rank.MISS)
+	if early <= Judge.HOLD_RELEASE_GRACE:
+		_finish_hold(note, note.head_rank, note.head_inner)
+	else:
+		_finish_hold(note, Judge.Rank.MISS, false)
 
 func _judge_head(note: Note, error: float) -> void:
 	note.head_judged = true
 	var rank := Judge.rank_for(error)
+	var inner := Judge.is_inner_critical(error)
 	if not note.is_hold() or rank == Judge.Rank.MISS:
-		_record(rank, note.lane)
+		_record(rank, note.lane, true, inner)
 		_finish(note)
 		return
 	# A hit hold is not scored yet: its rank only stands if the key stays down.
 	# Show it now anyway, so the press gets the same instant feedback as a tap.
 	note.head_rank = rank
+	note.head_inner = inner
 	note.holding = true
 	_held[note.lane] = note
 	_announce(rank)
 
 ## Scores a hold once it is over. Its rank was already shown when the head was
 ## hit, so only a dropped hold is announced again.
-func _finish_hold(note: Note, rank: Judge.Rank) -> void:
-	_record(rank, note.lane, rank == Judge.Rank.MISS)
+func _finish_hold(note: Note, rank: Judge.Rank, inner: bool) -> void:
+	_record(rank, note.lane, rank == Judge.Rank.MISS, inner)
 	_finish(note)
 
 func _finish(note: Note) -> void:
@@ -194,10 +201,12 @@ func _finish(note: Note) -> void:
 	note.done = true
 	note.visible = false
 
-func _record(rank: Judge.Rank, lane: int, announce := true) -> void:
+func _record(rank: Judge.Rank, lane: int, announce := true, inner := false) -> void:
 	_counts[rank] += 1
 	_judged += 1
 	_earned += Judge.WEIGHT[rank]
+	if inner:
+		_inner_critical += 1
 
 	if rank == Judge.Rank.MISS:
 		_combo = 0
@@ -256,6 +265,7 @@ func _build_result() -> Dictionary:
 		"max_combo": _max_combo,
 		"note_count": _chart.notes.size(),
 		"counts": _counts.duplicate(),
+		"inner_critical": _inner_critical,
 		"autoplay": _autoplay,
 		"full_combo": _counts[Judge.Rank.MISS] == 0 and _judged == _chart.notes.size(),
 	}

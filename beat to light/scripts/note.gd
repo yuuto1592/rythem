@@ -23,6 +23,8 @@ var head_judged := false
 var holding := false
 ## What the head of a hold earned. It is only scored if the hold is kept to the end.
 var head_rank := Judge.Rank.MISS
+## Whether the head landed in Judge.INNER_CRITICAL_WINDOW.
+var head_inner := false
 ## Every judgement this note produces is in; it can be removed.
 var done := false
 

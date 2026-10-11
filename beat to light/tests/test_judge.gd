@@ -17,6 +17,42 @@ func test_critical_is_25ms_either_way() -> void:
 	check_eq(Judge.rank_for(0.026), Judge.Rank.PERFECT, "26ms late")
 	check_eq(Judge.rank_for(-0.026), Judge.Rank.PERFECT, "26ms early")
 
+func test_windows_and_weights_match_the_spec() -> void:
+	# The agreed table. Changing the feel should be a deliberate edit here too.
+	var spec := [
+		[Judge.Rank.CRITICAL, 0.025, 1.0],
+		[Judge.Rank.PERFECT, 0.040, 0.95],
+		[Judge.Rank.GREAT, 0.080, 0.5],
+		[Judge.Rank.GOOD, 0.150, 0.2],
+	]
+	for row: Array in spec:
+		var name: String = Judge.RANK_NAME[row[0]]
+		check_near(Judge.WINDOW[row[0]], row[1], "%s window" % name)
+		check_near(Judge.WEIGHT[row[0]], row[2], "%s weight" % name)
+	check_near(Judge.WEIGHT[Judge.Rank.MISS], 0.0, "MISS weight")
+	check_near(Judge.INNER_CRITICAL_WINDOW, 0.016, "inner CRITICAL window")
+
+func test_perfect_great_and_good_edges() -> void:
+	check_eq(Judge.rank_for(0.040), Judge.Rank.PERFECT, "40ms")
+	check_eq(Judge.rank_for(-0.041), Judge.Rank.GREAT, "41ms early")
+	check_eq(Judge.rank_for(0.080), Judge.Rank.GREAT, "80ms")
+	check_eq(Judge.rank_for(-0.081), Judge.Rank.GOOD, "81ms early")
+	check_eq(Judge.rank_for(0.150), Judge.Rank.GOOD, "150ms")
+	check_eq(Judge.rank_for(-0.151), Judge.Rank.MISS, "151ms early")
+
+func test_inner_critical_is_16ms_inside_critical() -> void:
+	for error in [0.0, 0.016, -0.016]:
+		check(Judge.is_inner_critical(error), "%.3fs is inner" % error)
+		check_eq(Judge.rank_for(error), Judge.Rank.CRITICAL, "%.3fs still shows as CRITICAL" % error)
+	for error in [0.017, -0.017, 0.025]:
+		check(not Judge.is_inner_critical(error), "%.3fs is not inner" % error)
+		check_eq(Judge.rank_for(error), Judge.Rank.CRITICAL, "%.3fs is plain CRITICAL" % error)
+
+func test_inner_critical_is_not_a_rank() -> void:
+	# Hidden: no name, color or row of its own anywhere ranks are listed.
+	check_eq(Judge.Rank.size(), 5, "five visible ranks")
+	check_eq(Judge.RANK_NAME.size(), 5, "five names on screen")
+
 func test_window_edges_are_inclusive() -> void:
 	for rank in [Judge.Rank.CRITICAL, Judge.Rank.PERFECT, Judge.Rank.GREAT, Judge.Rank.GOOD]:
 		check_eq(Judge.rank_for(Judge.WINDOW[rank]), rank, "%s edge" % Judge.RANK_NAME[rank])

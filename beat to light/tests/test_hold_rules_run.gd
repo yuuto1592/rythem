@@ -59,3 +59,6 @@ func run(host: Node) -> void:
 
 	check_eq(result["counts"][Judge.Rank.MISS], 2, "two misses in total")
 	check_eq(result["full_combo"], false, "no full combo")
+	check(result["inner_critical"] <= result["counts"][Judge.Rank.CRITICAL],
+			"inner CRITICALs are a subset of CRITICALs (got %d of %d)"
+			% [result["inner_critical"], result["counts"][Judge.Rank.CRITICAL]])
