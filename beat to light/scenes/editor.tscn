@@ -1,0 +1,289 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/editor/editor.gd" id="1_editor"]
+[ext_resource type="Script" path="res://scripts/editor/editor_timeline.gd" id="2_timeline"]
+[ext_resource type="Script" path="res://scripts/conductor.gd" id="3_cond"]
+
+[node name="Editor" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_editor")
+
+[node name="Background" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0431373, 0.0470588, 0.0784314, 1)
+
+[node name="Layout" type="HBoxContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = 8.0
+offset_right = -12.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Main" type="VBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="HeaderLabel" type="Label" parent="Layout/Main"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Editing: new chart"
+theme_override_font_sizes/font_size = 20
+
+[node name="Timeline" type="Control" parent="Layout/Main"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("2_timeline")
+
+[node name="Footer" type="HBoxContainer" parent="Layout/Main"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PositionLabel" type="Label" parent="Layout/Main/Footer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(270, 0)
+layout_mode = 2
+text = "Bar 1  ·  beat 0.00  ·  0.00s"
+theme_override_font_sizes/font_size = 15
+
+[node name="StatusLabel" type="Label" parent="Layout/Main/Footer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = ""
+text_overrun_behavior = 3
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="Side" type="PanelContainer" parent="Layout"]
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Layout/Side"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Margin" type="MarginContainer" parent="Layout/Side/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 8
+
+[node name="Column" type="VBoxContainer" parent="Layout/Side/Scroll/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Fields" type="GridContainer" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+columns = 2
+theme_override_constants/h_separation = 8
+
+[node name="TitleName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "Title"
+
+[node name="TitleEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ArtistName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "Artist"
+
+[node name="ArtistEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FileName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "File"
+
+[node name="FileEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Saved as <file>.json. Letters, digits, _ and - only."
+text = "new_chart"
+
+[node name="BpmName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "BPM"
+
+[node name="BpmSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 20.0
+max_value = 400.0
+step = 0.01
+value = 120.0
+
+[node name="OffsetName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "Offset"
+
+[node name="OffsetSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Seconds into the music where beat 0 falls."
+min_value = -10.0
+max_value = 10.0
+step = 0.001
+suffix = "s"
+
+[node name="SpeedName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "Scroll"
+
+[node name="SpeedSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Seconds a note takes to fall to the judgement line. Lower is faster."
+min_value = 0.3
+max_value = 3.0
+step = 0.05
+value = 1.1
+suffix = "s"
+
+[node name="SnapName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+layout_mode = 2
+text = "Snap"
+
+[node name="SnapOption" type="OptionButton" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+
+[node name="MusicSeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="MusicButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/MusicRow"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Load music (.ogg)"
+
+[node name="MusicLabel" type="Label" parent="Layout/Side/Scroll/Margin/Column/MusicRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No music"
+text_overrun_behavior = 3
+theme_override_colors/font_color = Color(1, 1, 1, 0.6)
+
+[node name="MetronomeCheck" type="CheckBox" parent="Layout/Side/Scroll/Margin/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+button_pressed = true
+text = "Metronome"
+
+[node name="PlaySeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="PlayRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/PlayRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Play  [Space]"
+
+[node name="RecordButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/PlayRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+tooltip_text = "While on, lane keys pressed during playback become notes."
+toggle_mode = true
+text = "Record: off"
+
+[node name="TestRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="TestButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/TestRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Test play"
+
+[node name="TestHereButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/TestRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Test from cursor"
+
+[node name="FileRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/FileRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Save  [Ctrl+S]"
+
+[node name="BackButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/FileRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 0
+text = "Back  [Esc]"
+
+[node name="HelpSeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
+layout_mode = 2
+
+[node name="HelpLabel" type="Label" parent="Layout/Side/Scroll/Margin/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.55)
+theme_override_constants/line_spacing = 0
+theme_override_font_sizes/font_size = 13
+
+[node name="Conductor" type="Node" parent="."]
+script = ExtResource("3_cond")
+
+[node name="Music" type="AudioStreamPlayer" parent="Conductor"]
+
+[node name="LeaveDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Unsaved changes"
+ok_button_text = "Leave"
+dialog_text = "Leave the editor without saving?
+Changes since the last save will be lost."
+
+[node name="MusicDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Load music"
+size = Vector2i(720, 480)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.ogg ; Ogg Vorbis")
+use_native_dialog = true

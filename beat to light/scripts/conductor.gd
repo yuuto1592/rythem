@@ -27,6 +27,8 @@ var chart_time := 0.0
 
 var _music: AudioStreamPlayer
 var _start_usec := 0
+## song_time at the moment playback started.
+var _origin := 0.0
 var _music_started := false
 var _last_beat := -1
 var _end_time := INF
@@ -46,13 +48,25 @@ func set_music(stream: AudioStream) -> void:
 	if _music != null:
 		_music.stream = stream
 
-## Runs until [param end_time] (chart seconds), then emits [signal finished].
+## Plays from the top, after [member lead_in], until [param end_time] (chart
+## seconds), then emits [signal finished].
 func start(end_time := INF) -> void:
+	_begin(-lead_in, end_time)
+
+## Plays from [param from_chart_time] instead of the top, with no lead-in: the
+## editor's playback and its "test from here". Music starts at the matching
+## point of the song.
+func start_at(from_chart_time: float, end_time := INF) -> void:
+	_begin(from_chart_time + offset, end_time)
+
+func _begin(from_song_time: float, end_time: float) -> void:
 	_end_time = end_time
-	_last_beat = -1
 	_music_started = false
-	song_time = -lead_in
+	_origin = from_song_time
+	song_time = from_song_time
 	chart_time = song_time - offset
+	# The first beat_hit is the first beat at or after the starting point.
+	_last_beat = ceili(chart_time / seconds_per_beat()) - 1
 	_start_usec = Time.get_ticks_usec()
 	playing = true
 	set_process(true)
@@ -64,7 +78,7 @@ func stop() -> void:
 		_music.stop()
 
 func _process(_delta: float) -> void:
-	song_time = float(Time.get_ticks_usec() - _start_usec) / 1_000_000.0 - lead_in
+	song_time = float(Time.get_ticks_usec() - _start_usec) / 1_000_000.0 + _origin
 
 	if has_music():
 		if not _music_started and song_time >= 0.0:

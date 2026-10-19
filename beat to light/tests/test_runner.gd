@@ -9,6 +9,11 @@ const UNIT_TESTS: Array[GDScript] = [
 	preload("res://tests/test_chart.gd"),
 	preload("res://tests/test_playfield.gd"),
 	preload("res://tests/test_conductor.gd"),
+	preload("res://tests/test_chart_doc.gd"),
+	preload("res://tests/test_note_recorder.gd"),
+	preload("res://tests/test_chart_store.gd"),
+	preload("res://tests/test_game_state.gd"),
+	preload("res://tests/test_editor_timeline.gd"),
 ]
 
 ## Play the real game scene against a fixture chart, in real time. Slower;
@@ -17,6 +22,9 @@ const PLAY_TESTS: Array[GDScript] = [
 	preload("res://tests/test_autoplay_run.gd"),
 	preload("res://tests/test_input_run.gd"),
 	preload("res://tests/test_hold_rules_run.gd"),
+	preload("res://tests/test_conductor_run.gd"),
+	preload("res://tests/test_play_from_run.gd"),
+	preload("res://tests/test_editor_run.gd"),
 ]
 
 ## Longer than the longest sound effect in sfx.gd.

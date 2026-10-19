@@ -78,7 +78,7 @@ func test_length_includes_a_hold_that_outlasts_later_notes() -> void:
 
 func test_bundled_charts_are_valid() -> void:
 	# Every chart that ships in songs/ must load and make sense.
-	var paths := GameState.list_charts()
+	var paths := ChartStore.list_charts_in(ChartStore.BUNDLED_DIR)
 	check(not paths.is_empty(), "songs/ contains charts")
 	for path in paths:
 		var chart := Chart.load_from_file(path)

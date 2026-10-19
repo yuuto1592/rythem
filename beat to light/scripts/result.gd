@@ -13,6 +13,8 @@ extends Control
 func _ready() -> void:
 	_retry.pressed.connect(_on_retry)
 	_menu.pressed.connect(_on_menu)
+	if GameState.exit_scene() == GameState.EDITOR_SCENE:
+		_menu.text = "Back to editor"
 	_retry.grab_focus()
 	_render(GameState.last_result)
 
@@ -54,7 +56,7 @@ func _on_retry() -> void:
 
 func _on_menu() -> void:
 	Sfx.play_ui()
-	get_tree().change_scene_to_file.call_deferred(GameState.MENU_SCENE)
+	get_tree().change_scene_to_file.call_deferred(GameState.exit_scene())
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):

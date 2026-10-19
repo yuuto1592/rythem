@@ -27,6 +27,9 @@ var _chart: Chart
 var _active: Array[Note] = []
 ## How far into Chart.notes we have spawned.
 var _spawn_index := 0
+## Chart time this run starts from (GameState.play_from_time). Notes before it
+## are left out, as if the chart began there.
+var _from_time := 0.0
 ## The hold whose key is down in each lane, if any. Lane -> Note.
 var _held := {}
 
@@ -47,9 +50,12 @@ func _ready() -> void:
 
 	_chart = Chart.load_from_file(GameState.chart_path)
 	if _chart == null:
-		# Nothing to play; the menu is the only sensible place to go.
-		_leave_to(GameState.MENU_SCENE)
+		# Nothing to play; go back to wherever we came from.
+		_leave_to(GameState.exit_scene())
 		return
+	_from_time = maxf(GameState.play_from_time, 0.0)
+	if _from_time > 0.0:
+		_drop_notes_before(_from_time)
 
 	_autoplay = GameState.autoplay
 	KeyBinds.ensure_actions(_chart.lane_count)
@@ -62,12 +68,16 @@ func _ready() -> void:
 	_conductor.finished.connect(_on_song_finished)
 
 	_hud.set_song(_chart.title, _chart.artist)
-	_hud.set_hint("%s  ·  R: retry  ·  F1: autoplay  ·  Esc: menu" % KeyBinds.lane_hint(_chart.lane_count))
+	_hud.set_hint("%s  ·  R: retry  ·  F1: autoplay  ·  Esc: back" % KeyBinds.lane_hint(_chart.lane_count))
 	_hud.set_autoplay(_autoplay)
 	_refresh_hud()
 
 	_running = true
-	_conductor.start(_chart.length() + OUTRO)
+	if _from_time > 0.0:
+		# Same lead-in as from the top, so the first note is not a surprise.
+		_conductor.start_at(_from_time - _conductor.lead_in, _chart.length() + OUTRO)
+	else:
+		_conductor.start(_chart.length() + OUTRO)
 
 func _process(_delta: float) -> void:
 	if not _running:
@@ -75,7 +85,7 @@ func _process(_delta: float) -> void:
 	var now := _conductor.chart_time
 	_spawn_due_notes(now)
 	_advance_notes(now)
-	_hud.set_progress(now / maxf(_chart.length(), 0.001))
+	_hud.set_progress((now - _from_time) / maxf(_chart.length() - _from_time, 0.001))
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel"):
@@ -271,14 +281,19 @@ func _build_result() -> Dictionary:
 	}
 
 func _load_music() -> AudioStream:
-	if _chart.music_path.is_empty() or not ResourceLoader.exists(_chart.music_path):
-		return null
-	return ResourceLoader.load(_chart.music_path) as AudioStream
+	return ChartStore.load_music(GameState.chart_path, _chart.music_path)
+
+func _drop_notes_before(time: float) -> void:
+	var kept: Array[ChartNote] = []
+	for note in _chart.notes:
+		if note.time >= time - 0.001:
+			kept.append(note)
+	_chart.notes = kept
 
 func _to_menu() -> void:
 	_conductor.stop()
 	_running = false
-	_leave_to(GameState.MENU_SCENE)
+	_leave_to(GameState.exit_scene())
 
 ## Scene changes only happen when this is the scene being played. Embedded in
 ## another scene (the tests do this) the host stays in charge of navigation.
