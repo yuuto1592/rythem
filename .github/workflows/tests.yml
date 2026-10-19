@@ -50,3 +50,77 @@ jobs:
         run: |
           "$HOME/godot/godot" --version
           GODOT="$HOME/godot/godot" tests/run_tests.sh
+
+  build-windows:
+    # A playable Windows build, made only once the tests pass. Pull requests
+    # are skipped to stay inside the private repository's artifact storage
+    # (500 MB on the free plan, about 36 MB per build); run the workflow by
+    # hand from the Actions tab to get a build of any branch.
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: beat to light
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Godot from cache
+        id: godot-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Download Godot (cache miss only)
+        if: steps.godot-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl -fsSL --retry 3 -o godot.zip \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          mkdir -p ~/godot
+          unzip -q godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}_linux.x86_64 ~/godot/godot
+          chmod +x ~/godot/godot
+
+      - name: Restore Windows export template from cache
+        id: template-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.local/share/godot/export_templates
+          key: godot-templates-${{ env.GODOT_VERSION }}-windows-x86_64
+
+      - name: Download Windows export template (cache miss only)
+        if: steps.template-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          # The bundle holds every platform (about 1.3 GB). Keep only the
+          # Windows template so the cache stays around 110 MB.
+          curl -fsSL --retry 3 -o templates.tpz \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+          dir="$HOME/.local/share/godot/export_templates/$(unzip -p templates.tpz templates/version.txt)"
+          mkdir -p "$dir"
+          unzip -q -j templates.tpz templates/windows_release_x86_64.exe templates/version.txt -d "$dir"
+          rm templates.tpz
+
+      - name: Export Windows build
+        shell: bash
+        run: |
+          out="$RUNNER_TEMP/build/beat_to_light.exe"
+          mkdir -p "$(dirname "$out")"
+          "$HOME/godot/godot" --headless --editor --quit --path . >/dev/null 2>&1 || true
+          "$HOME/godot/godot" --headless --path . --export-release "Windows Desktop" "$out" 2>&1 \
+            | tee "$RUNNER_TEMP/export.log"
+          test -s "$out"
+          # A build without the charts would open on an empty song list.
+          grep -q "res://songs/" "$RUNNER_TEMP/export.log"
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v6
+        with:
+          name: beat-to-light-windows
+          path: ${{ runner.temp }}/build/beat_to_light.exe
+          if-no-files-found: error
+          retention-days: 7
