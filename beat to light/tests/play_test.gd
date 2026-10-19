@@ -21,6 +21,7 @@ var judgements: Array[Dictionary] = []
 var _finished := false
 var _saved_chart_path := ""
 var _saved_autoplay := false
+var _saved_play_from := 0.0
 ## Key events waiting for their chart time: {time, lane, pressed}, by time.
 var _key_schedule: Array[Dictionary] = []
 
@@ -35,6 +36,7 @@ func expected_chart() -> Chart:
 func start_game(host: Node, autoplay: bool) -> void:
 	_saved_chart_path = GameState.chart_path
 	_saved_autoplay = GameState.autoplay
+	_saved_play_from = GameState.play_from_time
 	GameState.chart_path = fixture()
 	GameState.autoplay = autoplay
 
@@ -65,6 +67,7 @@ func play_to_end(host: Node) -> void:
 	game.queue_free()
 	GameState.chart_path = _saved_chart_path
 	GameState.autoplay = _saved_autoplay
+	GameState.play_from_time = _saved_play_from
 
 func _send_due_keys() -> void:
 	while not _key_schedule.is_empty() and _key_schedule[0].time <= conductor.chart_time:

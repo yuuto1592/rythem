@@ -37,9 +37,25 @@ horizontal_alignment = 1
 theme_override_colors/font_color = Color(1, 1, 1, 0.55)
 theme_override_font_sizes/font_size = 18
 
-[node name="ChartList" type="VBoxContainer" parent="Center/Column"]
+[node name="ChartScroll" type="ScrollContainer" parent="Center/Column"]
 unique_name_in_owner = true
+horizontal_scroll_mode = 0
+
+[node name="ListMargin" type="MarginContainer" parent="Center/Column/ChartScroll"]
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 3
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 3
+theme_override_constants/margin_bottom = 3
+
+[node name="ChartList" type="VBoxContainer" parent="Center/Column/ChartScroll/ListMargin"]
+unique_name_in_owner = true
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
+
+[node name="NewChartButton" type="Button" parent="Center/Column"]
+unique_name_in_owner = true
+text = "New chart (editor)"
 
 [node name="AutoplayCheck" type="CheckBox" parent="Center/Column"]
 unique_name_in_owner = true
