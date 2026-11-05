@@ -78,14 +78,54 @@ func last_beat() -> float:
 	return last
 
 ## Whether a note could go at [param beat] in [param lane] without colliding.
-## [param ignore] is left out of the check (for moving a note onto itself).
-func can_place(beat: float, lane: int, length := 0.0, ignore: EditNote = null) -> bool:
+## Notes in [param ignore] are left out of the check (the notes being moved).
+func can_place(beat: float, lane: int, length := 0.0, ignore: Array[EditNote] = []) -> bool:
 	if lane < 0 or lane >= lane_count or beat < -EPSILON:
 		return false
 	for note in notes:
-		if note != ignore and note.lane == lane and note.overlaps(beat, beat + maxf(length, 0.0)):
+		if note.lane == lane and note.overlaps(beat, beat + maxf(length, 0.0)) and not ignore.has(note):
 			return false
 	return true
+
+## Whether every note in [param moving] can go where [param targets] says
+## ({beat, lane, length} each, in the same order) at once: inside the chart,
+## clear of the notes that stay put, and clear of each other.
+func can_relocate(moving: Array[EditNote], targets: Array[Dictionary]) -> bool:
+	for i in targets.size():
+		var t := targets[i]
+		if not can_place(t.beat, t.lane, t.length, moving):
+			return false
+		for j in i:
+			var other := targets[j]
+			if other.lane == t.lane and t.beat <= other.beat + other.length + EPSILON \
+					and other.beat <= t.beat + t.length + EPSILON:
+				return false
+	return true
+
+## Where [param moving] would land shifted by [param beats] and [param lanes].
+static func shifted(moving: Array[EditNote], beats: float, lanes: int) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for note in moving:
+		out.append({"beat": tidy(note.beat + beats), "lane": note.lane + lanes, "length": note.length})
+	return out
+
+## Moves [param moving] as one block. All or nothing, one undo step. The notes
+## stay the same objects, so a selection holding them stays valid.
+func move_notes(moving: Array[EditNote], beats: float, lanes: int) -> bool:
+	return _relocate(moving, shifted(moving, beats, lanes))
+
+## Flips [param moving] left to right (lane 0 <-> the last lane).
+func mirror_notes(moving: Array[EditNote]) -> bool:
+	var targets: Array[Dictionary] = []
+	for note in moving:
+		targets.append({"beat": note.beat, "lane": lane_count - 1 - note.lane, "length": note.length})
+	return _relocate(moving, targets)
+
+## Makes [param note] a hold of [param length] beats, or a tap with 0.
+func set_length(note: EditNote, length: float) -> bool:
+	var one: Array[EditNote] = [note]
+	var target: Array[Dictionary] = [{"beat": note.beat, "lane": note.lane, "length": tidy(maxf(length, 0.0))}]
+	return _relocate(one, target)
 
 ## Adds a note if it fits. With [param undoable] false the caller has already
 ## taken a checkpoint (a recording take is undone as one step).
@@ -117,6 +157,48 @@ func remove_note(note: EditNote, undoable := true) -> bool:
 	notes.erase(note)
 	_touch()
 	return true
+
+## Removes every note in [param doomed] as one undo step. Returns how many went.
+func remove_notes(doomed: Array[EditNote]) -> int:
+	var present := doomed.filter(func(n: EditNote) -> bool: return notes.has(n))
+	if present.is_empty():
+		return 0
+	checkpoint()
+	for note in present:
+		notes.erase(note)
+	_touch()
+	return present.size()
+
+## Adds notes given as {beat, lane, length} (a paste) as one undo step. Notes
+## that would collide are skipped. Returns the notes that were added.
+func add_notes(items: Array[Dictionary]) -> Array[EditNote]:
+	var added: Array[EditNote] = []
+	var took_checkpoint := false
+	for item in items:
+		var beat := tidy(float(item.beat))
+		var length := tidy(maxf(float(item.get("length", 0.0)), 0.0))
+		if not can_place(beat, int(item.lane), length):
+			continue
+		if not took_checkpoint:
+			checkpoint()
+			took_checkpoint = true
+		var note := EditNote.new(beat, int(item.lane), length)
+		notes.append(note)
+		added.append(note)
+	if not added.is_empty():
+		_sort()
+		_touch()
+	return added
+
+## Notes with any part between [param from_beat] and [param to_beat] in lanes
+## [param from_lane] to [param to_lane] (inclusive): what a selection box covers.
+func notes_in(from_beat: float, to_beat: float, from_lane: int, to_lane: int) -> Array[EditNote]:
+	var out: Array[EditNote] = []
+	for note in notes:
+		if note.lane >= from_lane and note.lane <= to_lane \
+				and note.beat <= to_beat + EPSILON and note.end_beat() >= from_beat - EPSILON:
+			out.append(note)
+	return out
 
 ## Saves the current notes so the next change can be undone.
 func checkpoint() -> void:
@@ -181,6 +263,26 @@ func to_json_text(music_path := "") -> String:
 	lines.append("  ]")
 	lines.append("}")
 	return "\n".join(lines) + "\n"
+
+func _relocate(moving: Array[EditNote], targets: Array[Dictionary]) -> bool:
+	if moving.is_empty() or not can_relocate(moving, targets):
+		return false
+	var unchanged := true
+	for i in moving.size():
+		var n := moving[i]
+		var t := targets[i]
+		if not (is_equal_approx(n.beat, t.beat) and n.lane == t.lane and is_equal_approx(n.length, t.length)):
+			unchanged = false
+	if unchanged:
+		return true
+	checkpoint()
+	for i in moving.size():
+		moving[i].beat = tidy(targets[i].beat)
+		moving[i].lane = targets[i].lane
+		moving[i].length = tidy(targets[i].length)
+	_sort()
+	_touch()
+	return true
 
 func _snapshot() -> Array[EditNote]:
 	var copy: Array[EditNote] = []

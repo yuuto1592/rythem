@@ -35,12 +35,23 @@ run_capped() {
 	fi
 }
 
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+
 status=0
-run_capped "$GODOT" --headless --path "$project_dir" res://tests/test_runner.tscn || status=$?
+run_capped "$GODOT" --headless --path "$project_dir" res://tests/test_runner.tscn 2>&1 \
+	| tee "$log" || status=$?
 
 if [ "$status" -eq 124 ]; then
 	echo "" >&2
 	echo "Timed out after ${TEST_TIMEOUT}s. This almost always means a script failed" >&2
 	echo "to parse: look for 'SCRIPT ERROR' above." >&2
+elif [ "$status" -eq 0 ] && ! grep -qE '^[0-9]+ passed, 0 failed' "$log"; then
+	# Code under test that quits the game (the editor's "quit" after its
+	# unsaved-changes question, say) ends the run early with exit code 0.
+	echo "" >&2
+	echo "Godot exited before the suite finished: no summary line was printed." >&2
+	echo "Something quit the game early, in the test after the last one listed above." >&2
+	status=3
 fi
 exit "$status"

@@ -14,6 +14,7 @@ const UNIT_TESTS: Array[GDScript] = [
 	preload("res://tests/test_chart_store.gd"),
 	preload("res://tests/test_game_state.gd"),
 	preload("res://tests/test_editor_timeline.gd"),
+	preload("res://tests/test_waveform.gd"),
 ]
 
 ## Play the real game scene against a fixture chart, in real time. Slower;

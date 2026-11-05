@@ -18,6 +18,9 @@ signal finished
 @export var lead_in := 2.5
 ## Added to every note time; raise it if the chart feels early against the audio.
 @export var offset := 0.0
+## Playback speed: 1 is normal. The chart editor slows songs down for charting
+## (the music's pitch drops with it).
+var speed := 1.0
 
 var playing := false
 ## Raw audio position in seconds. Negative during the lead-in.
@@ -47,6 +50,9 @@ func has_music() -> bool:
 func set_music(stream: AudioStream) -> void:
 	if _music != null:
 		_music.stream = stream
+
+func get_music() -> AudioStream:
+	return _music.stream if _music != null else null
 
 ## Plays from the top, after [member lead_in], until [param end_time] (chart
 ## seconds), then emits [signal finished].
@@ -78,18 +84,19 @@ func stop() -> void:
 		_music.stop()
 
 func _process(_delta: float) -> void:
-	song_time = float(Time.get_ticks_usec() - _start_usec) / 1_000_000.0 + _origin
+	song_time = float(Time.get_ticks_usec() - _start_usec) / 1_000_000.0 * speed + _origin
 
 	if has_music():
 		if not _music_started and song_time >= 0.0:
+			_music.pitch_scale = speed
 			_music.play(song_time)
 			_music_started = true
 		if _music_started and _music.playing:
 			var position := _music.get_playback_position()
 			if position > 0.0:
 				# Compensate for the audio buffer so the visuals match what we hear.
-				song_time = position + AudioServer.get_time_since_last_mix() \
-						- AudioServer.get_output_latency()
+				song_time = position + (AudioServer.get_time_since_last_mix() \
+						- AudioServer.get_output_latency()) * speed
 
 	chart_time = song_time - offset
 	_emit_due_beats()
