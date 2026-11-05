@@ -118,3 +118,83 @@ func test_bpm_change_keeps_notes_on_their_beats() -> void:
 	var chart := Chart.from_dict(JSON.parse_string(doc.to_json_text()))
 	check_near(chart.notes[0].time, 4.0, "beat 4 is 4s at 60 BPM")
 	check_near(chart.notes[0].end_time, 6.0, "and the hold ends at 6s")
+
+func _layout(doc: ChartDoc) -> Array:
+	return doc.notes.map(func(n: EditNote) -> String:
+		return "%s@%d%s" % [str(ChartDoc.json_number(n.beat)), n.lane,
+				"+%s" % str(ChartDoc.json_number(n.length)) if n.is_hold() else ""])
+
+func test_move_notes_as_a_block() -> void:
+	var doc := _doc()
+	doc.add_note(1.0, 0)
+	doc.add_note(2.0, 1, 1.0)
+	doc.add_note(4.0, 3)
+	var block: Array[EditNote] = [doc.notes[0], doc.notes[1]]
+	check(doc.move_notes(block, 1.0, 1), "moved")
+	check_eq(_layout(doc), ["2@1", "3@2+1", "4@3"], "both notes moved one beat later and one lane right")
+	check(block[0].lane == 1 and block[1].lane == 2, "the same note objects moved (a selection stays valid)")
+	check(not doc.move_notes(block, 1.0, 1), "a block that would land on a note is refused")
+	check(not doc.move_notes(block, 0.0, 2), "a block that would leave the lanes is refused")
+	check(not doc.move_notes(block, -3.0, 0), "a block that would go before the start is refused")
+	check_eq(_layout(doc), ["2@1", "3@2+1", "4@3"], "refused moves change nothing")
+	check(doc.undo(), "one undo")
+	check_eq(_layout(doc), ["1@0", "2@1+1", "4@3"], "undoes the whole move")
+
+func test_notes_can_move_through_their_own_old_places() -> void:
+	var doc := _doc()
+	doc.add_note(1.0, 0)
+	doc.add_note(1.25, 0)
+	var both: Array[EditNote] = [doc.notes[0], doc.notes[1]]
+	check(doc.move_notes(both, 0.25, 0), "a run of notes shifts along itself")
+	check_eq(_layout(doc), ["1.25@0", "1.5@0"], "both shifted")
+
+func test_mirror_and_resize() -> void:
+	var doc := _doc()
+	doc.add_note(1.0, 0)
+	doc.add_note(2.0, 1, 1.0)
+	doc.add_note(2.0, 3)
+	var pair: Array[EditNote] = [doc.notes[0], doc.notes[1]]
+	check(doc.mirror_notes(pair), "mirrored")
+	check_eq(_layout(doc), ["1@3", "2@2+1", "2@3"], "lane 0 <-> 3, 1 <-> 2")
+	var hold := doc.notes[1]
+	check(doc.set_length(hold, 2.5), "longer hold")
+	check_near(hold.length, 2.5, "new length")
+	check(doc.set_length(hold, 0.0), "a hold can become a tap")
+	check(not hold.is_hold(), "now a tap")
+	var tap := doc.notes[0]
+	check(not doc.set_length(tap, 1.0), "a hold that would run into the next note is refused")
+	var blocked: Array[EditNote] = [doc.notes[2]]
+	doc.add_note(2.0, 0)
+	check(not doc.mirror_notes(blocked), "mirroring onto a note is refused")
+
+func test_delete_and_paste_are_one_step_each() -> void:
+	var doc := _doc()
+	doc.add_note(1.0, 0)
+	doc.add_note(2.0, 1)
+	doc.add_note(3.0, 2)
+	var two: Array[EditNote] = [doc.notes[0], doc.notes[2]]
+	check_eq(doc.remove_notes(two), 2, "two deleted")
+	check_eq(_layout(doc), ["2@1"], "the other stays")
+	doc.undo()
+	check_eq(doc.notes.size(), 3, "one undo brings both back")
+
+	var items: Array[Dictionary] = [
+		{"beat": 5.0, "lane": 0, "length": 0.0},
+		{"beat": 6.0, "lane": 1, "length": 1.0},
+		{"beat": 2.0, "lane": 1, "length": 0.0},  # lands on 2@1
+	]
+	var added := doc.add_notes(items)
+	check_eq(added.size(), 2, "the note in the way is left out")
+	check_eq(_layout(doc), ["1@0", "2@1", "3@2", "5@0", "6@1+1"], "pasted")
+	doc.undo()
+	check_eq(doc.notes.size(), 3, "one undo removes the whole paste")
+
+func test_notes_in_a_box() -> void:
+	var doc := _doc()
+	doc.add_note(1.0, 0)
+	doc.add_note(2.0, 1, 2.0)  # 2..4
+	doc.add_note(3.0, 2)
+	doc.add_note(6.0, 1)
+	var found := doc.notes_in(3.5, 6.5, 1, 1)
+	check_eq(found.size(), 2, "a hold reaching into the box counts, and so does a note inside it")
+	check_eq(doc.notes_in(0.0, 10.0, 3, 3).size(), 0, "an empty lane")

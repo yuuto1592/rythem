@@ -19,63 +19,139 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0431373, 0.0470588, 0.0784314, 1)
 
-[node name="Layout" type="HBoxContainer" parent="."]
+[node name="Layout" type="VBoxContainer" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = 8.0
-offset_right = -12.0
-offset_bottom = -8.0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = -8.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 6
 
-[node name="Main" type="VBoxContainer" parent="Layout"]
+[node name="Toolbar" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="HeaderLabel" type="Label" parent="Layout/Main"]
+[node name="NewButton" type="Button" parent="Layout/Toolbar"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Editing: new chart"
-theme_override_font_sizes/font_size = 20
+focus_mode = 0
+tooltip_text = "Start a new chart (Ctrl+N)"
+text = "New"
 
-[node name="Timeline" type="Control" parent="Layout/Main"]
+[node name="OpenMenu" type="MenuButton" parent="Layout/Toolbar"]
 unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Open a chart: pick one from the list, or Browse... (Ctrl+O)"
+text = "Open..."
+flat = false
+
+[node name="SaveButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Save (Ctrl+S)"
+text = "Save"
+
+[node name="SaveAsButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Save to another file (Ctrl+Shift+S)"
+text = "Save as..."
+
+[node name="Separator1" type="VSeparator" parent="Layout/Toolbar"]
+layout_mode = 2
+
+[node name="MusicButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Choose the song (.ogg). You can also drop it on the window."
+text = "Music..."
+
+[node name="Separator2" type="VSeparator" parent="Layout/Toolbar"]
+layout_mode = 2
+
+[node name="PlayButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Play from the cursor (Space)"
+text = "Play"
+
+[node name="RecordButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(92, 0)
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "While on, lane keys pressed during playback become notes."
+toggle_mode = true
+text = "Record"
+
+[node name="SpeedOption" type="OptionButton" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Playback speed"
+
+[node name="MetronomeCheck" type="CheckBox" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Click on every beat while playing"
+button_pressed = true
+text = "Metronome"
+
+[node name="NoteSoundCheck" type="CheckBox" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Play a sound for each note while playing"
+button_pressed = true
+text = "Note sounds"
+
+[node name="Separator3" type="VSeparator" parent="Layout/Toolbar"]
+layout_mode = 2
+
+[node name="TestButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Play the chart in the game from the start"
+text = "Test play"
+
+[node name="TestHereButton" type="Button" parent="Layout/Toolbar"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+tooltip_text = "Play the chart in the game from the cursor"
+text = "Test from cursor"
+
+[node name="Body" type="HBoxContainer" parent="Layout"]
 layout_mode = 2
 size_flags_vertical = 3
-script = ExtResource("2_timeline")
+theme_override_constants/separation = 8
 
-[node name="Footer" type="HBoxContainer" parent="Layout/Main"]
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="PositionLabel" type="Label" parent="Layout/Main/Footer"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(270, 0)
-layout_mode = 2
-text = "Bar 1  ·  beat 0.00  ·  0.00s"
-theme_override_font_sizes/font_size = 15
-
-[node name="StatusLabel" type="Label" parent="Layout/Main/Footer"]
+[node name="Timeline" type="Control" parent="Layout/Body"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = ""
-text_overrun_behavior = 3
-theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
-theme_override_font_sizes/font_size = 15
+script = ExtResource("2_timeline")
 
-[node name="Side" type="PanelContainer" parent="Layout"]
-custom_minimum_size = Vector2(330, 0)
+[node name="Side" type="PanelContainer" parent="Layout/Body"]
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 
-[node name="Scroll" type="ScrollContainer" parent="Layout/Side"]
+[node name="Scroll" type="ScrollContainer" parent="Layout/Body/Side"]
 layout_mode = 2
 horizontal_scroll_mode = 0
 
-[node name="Margin" type="MarginContainer" parent="Layout/Side/Scroll"]
+[node name="Margin" type="MarginContainer" parent="Layout/Body/Side/Scroll"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 10
@@ -83,49 +159,45 @@ theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 8
 
-[node name="Column" type="VBoxContainer" parent="Layout/Side/Scroll/Margin"]
+[node name="Column" type="VBoxContainer" parent="Layout/Body/Side/Scroll/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 
-[node name="Fields" type="GridContainer" parent="Layout/Side/Scroll/Margin/Column"]
+[node name="FileLabel" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "New chart"
+text_overrun_behavior = 3
+theme_override_font_sizes/font_size = 18
+
+[node name="Fields" type="GridContainer" parent="Layout/Body/Side/Scroll/Margin/Column"]
 layout_mode = 2
 columns = 2
 theme_override_constants/h_separation = 8
 
-[node name="TitleName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="TitleName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "Title"
 
-[node name="TitleEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="TitleEdit" type="LineEdit" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ArtistName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="ArtistName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "Artist"
 
-[node name="ArtistEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="ArtistEdit" type="LineEdit" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FileName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
-layout_mode = 2
-text = "File"
-
-[node name="FileEdit" type="LineEdit" parent="Layout/Side/Scroll/Margin/Column/Fields"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-tooltip_text = "Saved as <file>.json. Letters, digits, _ and - only."
-text = "new_chart"
-
-[node name="BpmName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="BpmName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "BPM"
 
-[node name="BpmSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="BpmSpin" type="SpinBox" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -134,154 +206,154 @@ max_value = 400.0
 step = 0.01
 value = 120.0
 
-[node name="OffsetName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="OffsetName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "Offset"
 
-[node name="OffsetSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="OffsetSpin" type="SpinBox" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Seconds into the music where beat 0 falls."
+tooltip_text = "Seconds into the music where beat 0 falls. Line the beat lines up with the waveform."
 min_value = -10.0
 max_value = 10.0
 step = 0.001
 suffix = "s"
 
-[node name="SpeedName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="ScrollName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "Scroll"
 
-[node name="SpeedSpin" type="SpinBox" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="ScrollSpin" type="SpinBox" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Seconds a note takes to fall to the judgement line. Lower is faster."
+tooltip_text = "Seconds a note takes to fall to the judgement line in the game. Lower is faster."
 min_value = 0.3
 max_value = 3.0
 step = 0.05
 value = 1.1
 suffix = "s"
 
-[node name="SnapName" type="Label" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="SnapName" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 layout_mode = 2
 text = "Snap"
 
-[node name="SnapOption" type="OptionButton" parent="Layout/Side/Scroll/Margin/Column/Fields"]
+[node name="SnapOption" type="OptionButton" parent="Layout/Body/Side/Scroll/Margin/Column/Fields"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 focus_mode = 0
+tooltip_text = "Notes snap to this grid (keys 1-6)"
 
-[node name="MusicSeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
-layout_mode = 2
-
-[node name="MusicRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
-layout_mode = 2
-
-[node name="MusicButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/MusicRow"]
+[node name="MusicLabel" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
-focus_mode = 0
-text = "Load music (.ogg)"
-
-[node name="MusicLabel" type="Label" parent="Layout/Side/Scroll/Margin/Column/MusicRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
 text = "No music"
 text_overrun_behavior = 3
-theme_override_colors/font_color = Color(1, 1, 1, 0.6)
+theme_override_colors/font_color = Color(1, 1, 1, 0.65)
 
-[node name="MetronomeCheck" type="CheckBox" parent="Layout/Side/Scroll/Margin/Column"]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-button_pressed = true
-text = "Metronome"
-
-[node name="PlaySeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
+[node name="SelectionSeparator" type="HSeparator" parent="Layout/Body/Side/Scroll/Margin/Column"]
 layout_mode = 2
 
-[node name="PlayRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+[node name="SelectionRow" type="HBoxContainer" parent="Layout/Body/Side/Scroll/Margin/Column"]
 layout_mode = 2
 
-[node name="PlayButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/PlayRow"]
+[node name="SelectionLabel" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column/SelectionRow"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-focus_mode = 0
-text = "Play  [Space]"
+text = "Nothing selected"
 
-[node name="RecordButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/PlayRow"]
+[node name="MirrorButton" type="Button" parent="Layout/Body/Side/Scroll/Margin/Column/SelectionRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
-tooltip_text = "While on, lane keys pressed during playback become notes."
-toggle_mode = true
-text = "Record: off"
+tooltip_text = "Flip the selected notes left to right (M)"
+disabled = true
+text = "Mirror"
 
-[node name="TestRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
-layout_mode = 2
-
-[node name="TestButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/TestRow"]
+[node name="DeleteButton" type="Button" parent="Layout/Body/Side/Scroll/Margin/Column/SelectionRow"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 focus_mode = 0
-text = "Test play"
+tooltip_text = "Delete the selected notes (Del)"
+disabled = true
+text = "Delete"
 
-[node name="TestHereButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/TestRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Test from cursor"
-
-[node name="FileRow" type="HBoxContainer" parent="Layout/Side/Scroll/Margin/Column"]
+[node name="HelpSeparator" type="HSeparator" parent="Layout/Body/Side/Scroll/Margin/Column"]
 layout_mode = 2
 
-[node name="SaveButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/FileRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Save  [Ctrl+S]"
-
-[node name="BackButton" type="Button" parent="Layout/Side/Scroll/Margin/Column/FileRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-focus_mode = 0
-text = "Back  [Esc]"
-
-[node name="HelpSeparator" type="HSeparator" parent="Layout/Side/Scroll/Margin/Column"]
-layout_mode = 2
-
-[node name="HelpLabel" type="Label" parent="Layout/Side/Scroll/Margin/Column"]
+[node name="HelpLabel" type="Label" parent="Layout/Body/Side/Scroll/Margin/Column"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 0.55)
 theme_override_constants/line_spacing = 0
 theme_override_font_sizes/font_size = 13
 
+[node name="StatusBar" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="PositionLabel" type="Label" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 0)
+layout_mode = 2
+text = "Bar 1  ·  beat 0.00  ·  0.00s"
+theme_override_font_sizes/font_size = 15
+
+[node name="CountLabel" type="Label" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "0 notes (0 holds)"
+theme_override_colors/font_color = Color(1, 1, 1, 0.65)
+theme_override_font_sizes/font_size = 15
+
+[node name="StatusLabel" type="Label" parent="Layout/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = ""
+text_overrun_behavior = 3
+theme_override_colors/font_color = Color(1, 0.85, 0.45, 1)
+theme_override_font_sizes/font_size = 15
+
 [node name="Conductor" type="Node" parent="."]
 script = ExtResource("3_cond")
 
 [node name="Music" type="AudioStreamPlayer" parent="Conductor"]
 
-[node name="LeaveDialog" type="ConfirmationDialog" parent="."]
+[node name="UnsavedDialog" type="ConfirmationDialog" parent="."]
 unique_name_in_owner = true
 title = "Unsaved changes"
-ok_button_text = "Leave"
-dialog_text = "Leave the editor without saving?
-Changes since the last save will be lost."
+ok_button_text = "Save"
+dialog_text = "Save changes first?"
+
+[node name="OpenDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Open chart"
+size = Vector2i(760, 500)
+ok_button_text = "Open"
+file_mode = 0
+access = 2
+filters = PackedStringArray("*.json ; Charts")
+use_native_dialog = true
+
+[node name="SaveDialog" type="FileDialog" parent="."]
+unique_name_in_owner = true
+title = "Save chart"
+size = Vector2i(760, 500)
+ok_button_text = "Save"
+file_mode = 4
+access = 2
+filters = PackedStringArray("*.json ; Charts")
+use_native_dialog = true
 
 [node name="MusicDialog" type="FileDialog" parent="."]
 unique_name_in_owner = true
-title = "Load music"
-size = Vector2i(720, 480)
+title = "Choose music"
+size = Vector2i(760, 500)
 ok_button_text = "Open"
 file_mode = 0
 access = 2

@@ -52,10 +52,11 @@ jobs:
           GODOT="$HOME/godot/godot" tests/run_tests.sh
 
   build-windows:
-    # A playable Windows build, made only once the tests pass. Pull requests
-    # are skipped to stay inside the private repository's artifact storage
-    # (500 MB on the free plan, about 36 MB per build); run the workflow by
-    # hand from the Actions tab to get a build of any branch.
+    # Windows builds of the game and of the chart editor app, made only once
+    # the tests pass. Pull requests are skipped to stay inside the private
+    # repository's artifact storage (500 MB on the free plan, about 72 MB per
+    # run for the two); run the workflow by hand from the Actions tab to get a
+    # build of any branch.
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -105,22 +106,28 @@ jobs:
           unzip -q -j templates.tpz templates/windows_release_x86_64.exe templates/version.txt -d "$dir"
           rm templates.tpz
 
-      - name: Export Windows build
+      - name: Export Windows builds
         shell: bash
         run: |
-          out="$RUNNER_TEMP/build/beat_to_light.exe"
-          mkdir -p "$(dirname "$out")"
+          mkdir -p "$RUNNER_TEMP/build"
           "$HOME/godot/godot" --headless --editor --quit --path . >/dev/null 2>&1 || true
-          "$HOME/godot/godot" --headless --path . --export-release "Windows Desktop" "$out" 2>&1 \
-            | tee "$RUNNER_TEMP/export.log"
-          test -s "$out"
-          # A build without the charts would open on an empty song list.
-          grep -q "res://songs/" "$RUNNER_TEMP/export.log"
+          export_one() {
+            local preset="$1" out="$RUNNER_TEMP/build/$2"
+            "$HOME/godot/godot" --headless --path . --export-release "$preset" "$out" 2>&1 \
+              | tee "$RUNNER_TEMP/export-$2.log"
+            test -s "$out"
+            # A build without the charts would open on an empty song list.
+            grep -q "res://songs/" "$RUNNER_TEMP/export-$2.log"
+          }
+          export_one "Windows Desktop" beat_to_light.exe
+          export_one "Chart Editor (Windows)" beat_to_light_chart_editor.exe
 
-      - name: Upload Windows build
+      - name: Upload Windows builds
         uses: actions/upload-artifact@v6
         with:
           name: beat-to-light-windows
-          path: ${{ runner.temp }}/build/beat_to_light.exe
+          path: |
+            ${{ runner.temp }}/build/beat_to_light.exe
+            ${{ runner.temp }}/build/beat_to_light_chart_editor.exe
           if-no-files-found: error
           retention-days: 7
